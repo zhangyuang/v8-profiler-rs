@@ -1,0 +1,29 @@
+[package]
+authors = ["LongYinan <lynweklm@gmail.com>"]
+edition = "2021"
+name = "napi-package-template"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = "2"
+napi-derive = "2"
+# v8 = "0.37.0"
+v8={path="/Users/yuuang/Desktop/github/rusty_v8"}
+lazy_static = "1.4.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "*"
+
+[target.'cfg(all(any(windows, unix), target_arch = "x86_64", not(target_env = "musl")))'.dependencies]
+mimalloc = {version = "0.1"}
+
+[build-dependencies]
+napi-build = "1"
+
+[profile.release]
+lto = true
+
