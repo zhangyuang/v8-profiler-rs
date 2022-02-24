@@ -1,19 +1,18 @@
 mod variable;
 use std::fs::read_to_string;
 use variable::Variable::{
-    node_fields, node_types_basic, node_types_refer, Heapsnapshot, NodePropertyType, NodeValue,
+    Heapsnapshot, JsValueType, NodeFields, NodePropertyType, NodeTypesBasic, NodeTypesRefer,
 };
-
 fn main() {
-    let f = read_to_string("test.json").expect("file not found");
-    let snapshot = serde_json::from_str::<Heapsnapshot>(&f).expect("type format error");
+    let snapshot_string = read_to_string("test.json").expect("file not found");
+    let snapshot: Heapsnapshot = serde_json::from_str(&snapshot_string).expect("type format error");
     let nodes = &snapshot.nodes;
     let mut nodes_arr = vec![];
     let mut node_item = vec![];
     nodes.iter().enumerate().for_each(|(index, val)| {
         // 每一行六个属性作为一个节点
         node_item.push(val);
-        if (index + 1) % node_fields.len() == 0 {
+        if (index + 1) % NodeFields.len() == 0 {
             nodes_arr.push(node_item.clone());
             node_item = vec![]
         }
@@ -27,31 +26,22 @@ fn main() {
     })
 }
 
-// val 代表当前 node property 的 value
+// // val 代表当前 node property 的 value
 fn get_node_property(row: usize, col: usize, val: usize, snapshot: &Heapsnapshot) {
-    let node_start = row * node_fields.len();
-    let offset = node_start + val; // 当前 property 的 index
+    let offset = row * NodeFields.len() + val; // 当前 property 的 index
     let node_property_type: NodePropertyType = if col == 0 {
-        NodePropertyType::Arr(node_types_refer)
+        NodePropertyType::Arr(NodeTypesRefer)
     } else {
-        NodePropertyType::String(node_types_basic[col].clone())
+        NodePropertyType::Str(NodeTypesBasic[col].clone())
     };
-    let node_property_val: NodeValue = match node_property_type {
-        NodePropertyType::String(val) => {
+    let node_property_val: JsValueType = match node_property_type {
+        NodePropertyType::Str(val) => {
             if val == "string".to_string() {
-                NodeValue::String(snapshot.strings[offset].clone())
+                JsValueType::String(snapshot.strings[offset].clone())
             } else {
-                NodeValue::Number(val)
+                JsValueType::Number(*&snapshot.nodes[offset])
             }
         }
-        NodePropertyType::Arr(val) => val[col],
+        NodePropertyType::Arr(val) => JsValueType::String(val[col].to_string()),
     };
-    // let node_property_val = if node_property_type == NodePropertyType::String {
-    //     snapshot.strings[offset]
-    // } else if node_property_type == "number" {
-    //     String(val)
-    // } else {
-    //     node_property_type[col]
-    // };
-    // print!("{:?}", node_property_val);
 }
