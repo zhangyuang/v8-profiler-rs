@@ -1,7 +1,7 @@
 mod variable;
 use std::fs::read_to_string;
 use variable::Variable::{
-    Heapsnapshot, JsValueType, NodeFields, NodePropertyType, NodeTypesBasic, NodeTypesRefer,
+    Heapsnapshot, JsValueType, Node, NodeFields, NodePropertyType, NodeTypesBasic, NodeTypesRefer,
 };
 fn main() {
     let snapshot_string = read_to_string("test.json").expect("file not found");
@@ -17,18 +17,23 @@ fn main() {
             node_item = vec![]
         }
     });
-    nodes_arr.iter().enumerate().for_each(|(row, row_val)| {
-        // 遍历每一个节点的每一个属性
-        row_val
-            .iter()
-            .enumerate()
-            .for_each(|(col, col_val)| get_node_property(row, col, **col_val, &snapshot));
-    })
+    let node_struct_arr: Vec<Node> = nodes_arr
+        .iter()
+        .enumerate()
+        .map(|(row, _)| Node {
+            node_type: get_node_property(row, 0, &snapshot),
+            name: get_node_property(row, 1, &snapshot),
+            id: get_node_property(row, 2, &snapshot),
+            self_size: get_node_property(row, 3, &snapshot),
+            edge_count: get_node_property(row, 4, &snapshot),
+            trace_node_id: get_node_property(row, 5, &snapshot),
+        })
+        .collect();
 }
 
 // // val 代表当前 node property 的 value
-fn get_node_property(row: usize, col: usize, val: usize, snapshot: &Heapsnapshot) {
-    let offset = row * NodeFields.len() + val; // 当前 property 的 index
+fn get_node_property(row: usize, col: usize, snapshot: &Heapsnapshot) -> JsValueType {
+    let offset = row * NodeFields.len() + col; // 当前 property 的 index
     let node_property_type: NodePropertyType = if col == 0 {
         NodePropertyType::Arr(NodeTypesRefer)
     } else {
@@ -36,7 +41,7 @@ fn get_node_property(row: usize, col: usize, val: usize, snapshot: &Heapsnapshot
     };
     let node_property_val: JsValueType = match node_property_type {
         NodePropertyType::Str(val) => {
-            if val == "string".to_string() {
+            if val == "string" {
                 JsValueType::String(snapshot.strings[offset].clone())
             } else {
                 JsValueType::Number(*&snapshot.nodes[offset])
@@ -44,4 +49,5 @@ fn get_node_property(row: usize, col: usize, val: usize, snapshot: &Heapsnapshot
         }
         NodePropertyType::Arr(val) => JsValueType::String(val[col].to_string()),
     };
+    node_property_val
 }

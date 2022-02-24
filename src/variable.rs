@@ -56,18 +56,20 @@ pub mod Variable {
         pub samples: Vec<usize>,
     }
 
+    #[derive(Debug)]
     pub struct Node {
-        node_type: String,
-        name: String,
-        id: usize,
-        self_size: usize,
-        edge_count: usize,
-        trace_node_id: usize,
+        pub node_type: JsValueType,
+        pub name: JsValueType,
+        pub id: JsValueType,
+        pub self_size: JsValueType,
+        pub edge_count: JsValueType,
+        pub trace_node_id: JsValueType,
     }
     pub enum NodePropertyType {
         Arr([&'static str; 14]),
         Str(&'static str),
     }
+    #[derive(Debug)]
     pub enum JsValueType {
         String(String),
         Number(usize),
