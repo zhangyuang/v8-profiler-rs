@@ -1,4 +1,4 @@
-pub mod Variable {
+pub mod variable {
     use serde::{Deserialize, Serialize};
 
     pub const NodeTypesRefer: [&str; 14] = [
@@ -56,7 +56,7 @@ pub mod Variable {
         pub samples: Vec<usize>,
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub struct Node {
         pub node_type: JsValueType,
         pub name: JsValueType,
@@ -69,7 +69,7 @@ pub mod Variable {
         Arr([&'static str; 14]),
         Str(&'static str),
     }
-    #[derive(Debug)]
+    #[derive(Debug, Serialize, Deserialize)]
     pub enum JsValueType {
         String(String),
         Number(usize),
