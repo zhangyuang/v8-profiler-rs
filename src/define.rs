@@ -1,7 +1,7 @@
-pub mod variable {
+pub mod preset {
     use serde::{Deserialize, Serialize};
 
-    pub const NodeTypesRefer: [&str; 14] = [
+    pub const NodeTypesProperty: [&str; 14] = [
         "hidden",
         "array",
         "string",
@@ -17,7 +17,7 @@ pub mod variable {
         "symbol",
         "bigint",
     ];
-    pub const NodeTypesBasic: [&str; 6] =
+    pub const NodeOthersProperty: [&str; 6] =
         ["string", "number", "number", "number", "number", "number"];
 
     pub const NodeFields: [&str; 6] = [
@@ -28,6 +28,10 @@ pub mod variable {
         "edge_count",
         "trace_node_id",
     ];
+    pub const EdgeTypesProperty: [&str; 7] = [
+        "context", "element", "property", "internal", "hidden", "shortcut", "weak",
+    ];
+    pub const EdgeOthersProperty: [&str; 2] = ["string_or_number", "node"];
     #[derive(Serialize, Deserialize)]
     pub struct Meta {
         node_fields: [String; 6],
@@ -64,14 +68,26 @@ pub mod variable {
         pub self_size: JsValueType,
         pub edge_count: JsValueType,
         pub trace_node_id: JsValueType,
+        pub edges: Option<Vec<Edge>>,
+    }
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct Edge {
+        pub edge_type: JsValueType,
+        pub name_or_index: JsValueType,
+        pub to_node: JsValueType,
     }
     pub enum NodePropertyType {
         Arr([&'static str; 14]),
         Str(&'static str),
     }
+    pub enum EdgePropertyType {
+        Arr([&'static str; 7]),
+        Str(&'static str),
+    }
     #[derive(Debug, Serialize, Deserialize)]
+    #[serde(untagged)]
     pub enum JsValueType {
-        String(String),
-        Number(usize),
+        JsString(String),
+        JsNumber(usize),
     }
 }

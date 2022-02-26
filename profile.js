@@ -29,11 +29,4 @@ setInterval(function testMemoryLeak() {
       console.log('leakMessage')
     }
   }
-  // count++
-  // console.log(count)
-  // if (count === 20) {
-  //   const stream = require('v8').getHeapSnapshot();
-  //   stream.pipe(fs.createWriteStream('heapdump.heapsnapshot'))
-  // }
-  // _cached.push(new Array(1000000));
 }, 20)

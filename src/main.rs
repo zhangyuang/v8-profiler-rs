@@ -1,48 +1,101 @@
-mod variable;
-use std::fs::{read_to_string, write};
-use variable::variable::{
-    Heapsnapshot, JsValueType, Node, NodeFields, NodePropertyType, NodeTypesBasic, NodeTypesRefer,
+mod define;
+use define::preset::{
+    Edge, EdgeOthersProperty, EdgePropertyType, EdgeTypesProperty, Heapsnapshot, JsValueType, Node,
+    NodeFields, NodeOthersProperty, NodePropertyType, NodeTypesProperty,
 };
+use std::fs::{read_to_string, write};
 fn main() {
-    let snapshot_string = read_to_string("test.json").expect("file not found");
-    let snapshot: Heapsnapshot = serde_json::from_str(&snapshot_string).expect("type format error");
+    let snapshot = read_to_snapshot("test.json");
     let nodes = &snapshot.nodes;
-    let node_struct_arr: Vec<Node> = nodes
-        .iter()
-        .enumerate()
-        .map(|(index, _)| {
-            let row = index % 6;
-            Node {
-                node_type: get_node_property(row, 0, &snapshot),
-                name: get_node_property(row, 1, &snapshot),
-                id: get_node_property(row, 2, &snapshot),
-                self_size: get_node_property(row, 3, &snapshot),
-                edge_count: get_node_property(row, 4, &snapshot),
-                trace_node_id: get_node_property(row, 5, &snapshot),
-            }
-        })
-        .collect();
+    let mut node_struct_arr: Vec<Node> = vec![];
+    let (mut i, mut row) = (0, 0);
+    while i < nodes.len() {
+        let node_start = row * NodeFields.len();
+        node_struct_arr.push(Node {
+            node_type: get_node_property(node_start, 0, &snapshot),
+            name: get_node_property(node_start, 1, &snapshot),
+            id: get_node_property(node_start, 2, &snapshot),
+            self_size: get_node_property(node_start, 3, &snapshot),
+            edge_count: get_node_property(node_start, 4, &snapshot),
+            trace_node_id: get_node_property(node_start, 5, &snapshot),
+            edges: None,
+        });
+        i += 6;
+        row += 1;
+    }
+    let mut edge_start = 0;
+    for i in 0..node_struct_arr.len() {
+        let node = &mut node_struct_arr[i];
+        let Node { edge_count, .. } = node;
+        if let JsValueType::JsNumber(edge_count) = *edge_count {
+            let edges: Vec<Edge> = (0..edge_count)
+                .map(|_| Edge {
+                    edge_type: get_edgs_property(edge_start, 0, &snapshot),
+                    name_or_index: get_edgs_property(edge_start, 1, &snapshot),
+                    to_node: get_edgs_property(edge_start, 2, &snapshot),
+                })
+                .collect();
+            edge_start += edge_count;
+            node.edges = Some(edges);
+        }
+    }
     let foo = serde_json::to_string(&node_struct_arr).unwrap();
     write("bar.json", foo).unwrap();
 }
 
-fn get_node_property(row: usize, col: usize, snapshot: &Heapsnapshot) -> JsValueType {
-    let offset = row * NodeFields.len() + col; // 当前 property 的 index
-    let node_property_type: NodePropertyType = if col == 0 {
-        NodePropertyType::Arr(NodeTypesRefer)
+fn read_to_snapshot(path: &str) -> Heapsnapshot {
+    let snapshot_string = read_to_string(path).expect("file not found");
+    serde_json::from_str::<Heapsnapshot>(&snapshot_string).expect("type format error")
+}
+fn get_edgs_property(edge_start: usize, col: usize, snapshot: &Heapsnapshot) -> JsValueType {
+    let offset = edge_start * 3 + col;
+    let edge_val = snapshot.edges[offset];
+    let edge_property_type: EdgePropertyType = if col == 0 {
+        EdgePropertyType::Arr(EdgeTypesProperty)
     } else {
-        NodePropertyType::Str(NodeTypesBasic[col].clone())
+        EdgePropertyType::Str(EdgeOthersProperty[col - 1].clone())
     };
-    let node_property_val: JsValueType = match node_property_type {
-        NodePropertyType::Str(val) => {
-            let nodes_val = snapshot.nodes[offset];
-            if val == "string" {
-                JsValueType::String(snapshot.strings[nodes_val].clone())
+    let edge_property_val: JsValueType = match edge_property_type {
+        EdgePropertyType::Str(property_type) => {
+            if property_type == "string" || property_type == "string_or_number" {
+                JsValueType::JsString(snapshot.strings[edge_val].to_string())
+            } else if property_type == "number" {
+                JsValueType::JsNumber(edge_val)
+            } else if property_type == "node" {
+                get_node_property(edge_start, 2, snapshot)
             } else {
-                JsValueType::Number(nodes_val)
+                panic!("unknkow property_type {} ", property_type)
             }
         }
-        NodePropertyType::Arr(val) => JsValueType::String(val[col].to_string()),
+        EdgePropertyType::Arr(type_property) => {
+            JsValueType::JsString(type_property[edge_val].to_string())
+        }
+    };
+    edge_property_val
+}
+
+fn get_node_property(node_start: usize, col: usize, snapshot: &Heapsnapshot) -> JsValueType {
+    // node_start 代表当前是第几个 node, col 代表属性的偏移量
+    let offset = node_start + col; // 当前属性在 nodes 中的索引
+    let node_val = snapshot.nodes[offset];
+    let node_property_type: NodePropertyType = if col == 0 {
+        NodePropertyType::Arr(NodeTypesProperty)
+    } else {
+        NodePropertyType::Str(NodeOthersProperty[col - 1].clone())
+    };
+    let node_property_val: JsValueType = match node_property_type {
+        NodePropertyType::Str(property_type) => {
+            if property_type == "string" {
+                JsValueType::JsString(snapshot.strings[node_val].to_string())
+            } else if property_type == "number" {
+                JsValueType::JsNumber(node_val)
+            } else {
+                panic!("unknkow property_type {} ", property_type)
+            }
+        }
+        NodePropertyType::Arr(type_property) => {
+            JsValueType::JsString(type_property[node_val].to_string())
+        }
     };
     node_property_val
 }
