@@ -24,4 +24,57 @@ pub struct Edge {
     pub name_or_index: JsValueType,
     pub to_node: JsValueType,
 }
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum JsValueType {
+    JsString(String),
+    JsNumber(usize),
+}
 ```
+
+执行后将会生成如下 `json` 结构
+
+```json
+{
+"node_type": "closure",
+"name": "testMemoryLeak",
+"id": 4611,
+"self_size": 64,
+"edge_count": 6,
+"trace_node_id": 0,
+"edges": [
+    {
+        "edge_type": "property",
+        "name_or_index": "__proto__",
+        "to_node": 9963
+    },
+    {
+        "edge_type": "internal",
+        "name_or_index": "feedback_cell",
+        "to_node": 36845
+    },
+    {
+        "edge_type": "internal",
+        "name_or_index": "shared",
+        "to_node": 28423
+    },
+    {
+        "edge_type": "internal",
+        "name_or_index": "context",
+        "to_node": 4605
+    },
+    {
+        "edge_type": "internal",
+        "name_or_index": "code",
+        "to_node": 1407
+    },
+    {
+        "edge_type": "internal",
+        "name_or_index": "map",
+        "to_node": 10171
+    }
+]
+}
+```
+
+![](/images/chromedevtools.png)

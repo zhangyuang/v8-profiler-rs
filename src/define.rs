@@ -28,6 +28,7 @@ pub mod preset {
         "edge_count",
         "trace_node_id",
     ];
+    pub const EdgeFields: [&str; 3] = ["type", "name_or_index", "to_node"];
     pub const EdgeTypesProperty: [&str; 7] = [
         "context", "element", "property", "internal", "hidden", "shortcut", "weak",
     ];

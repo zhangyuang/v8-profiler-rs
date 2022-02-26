@@ -1,7 +1,7 @@
 mod define;
 use define::preset::{
-    Edge, EdgeOthersProperty, EdgePropertyType, EdgeTypesProperty, Heapsnapshot, JsValueType, Node,
-    NodeFields, NodeOthersProperty, NodePropertyType, NodeTypesProperty,
+    Edge, EdgeFields, EdgeOthersProperty, EdgePropertyType, EdgeTypesProperty, Heapsnapshot,
+    JsValueType, Node, NodeFields, NodeOthersProperty, NodePropertyType, NodeTypesProperty,
 };
 use std::fs::{read_to_string, write};
 fn main() {
@@ -23,22 +23,30 @@ fn main() {
         i += 6;
         row += 1;
     }
-    let mut edge_start = 0;
-    for i in 0..node_struct_arr.len() {
-        let node = &mut node_struct_arr[i];
-        let Node { edge_count, .. } = node;
-        if let JsValueType::JsNumber(edge_count) = *edge_count {
-            let edges: Vec<Edge> = (0..edge_count)
-                .map(|_| Edge {
-                    edge_type: get_edgs_property(edge_start, 0, &snapshot),
-                    name_or_index: get_edgs_property(edge_start, 1, &snapshot),
-                    to_node: get_edgs_property(edge_start, 2, &snapshot),
-                })
-                .collect();
-            edge_start += edge_count;
-            node.edges = Some(edges);
-        }
-    }
+    let mut edge_index = 0; // 代表当前是第几个 edge
+    node_struct_arr
+        .iter_mut()
+        .enumerate()
+        .for_each(|(_, node)| {
+            // 一个 node 有 edge_count 个 edge
+            let Node { edge_count, .. } = node;
+            if let JsValueType::JsNumber(edge_count) = *edge_count {
+                let edges: Vec<Edge> = (0..edge_count)
+                    .enumerate()
+                    .map(|_| {
+                        let edge_start = edge_index * EdgeFields.len();
+                        let edge = Edge {
+                            edge_type: get_edgs_property(edge_start, 0, &snapshot),
+                            name_or_index: get_edgs_property(edge_start, 1, &snapshot),
+                            to_node: get_edgs_property(edge_start, 2, &snapshot),
+                        };
+                        edge_index += 1;
+                        edge
+                    })
+                    .collect();
+                node.edges = Some(edges);
+            }
+        });
     let foo = serde_json::to_string(&node_struct_arr).unwrap();
     write("bar.json", foo).unwrap();
 }
@@ -48,7 +56,8 @@ fn read_to_snapshot(path: &str) -> Heapsnapshot {
     serde_json::from_str::<Heapsnapshot>(&snapshot_string).expect("type format error")
 }
 fn get_edgs_property(edge_start: usize, col: usize, snapshot: &Heapsnapshot) -> JsValueType {
-    let offset = edge_start * 3 + col;
+    // edge_start 代表当前 edge 的起始索引, col 代表属性的偏移量
+    let offset = edge_start + col;
     let edge_val = snapshot.edges[offset];
     let edge_property_type: EdgePropertyType = if col == 0 {
         EdgePropertyType::Arr(EdgeTypesProperty)
@@ -62,20 +71,20 @@ fn get_edgs_property(edge_start: usize, col: usize, snapshot: &Heapsnapshot) -> 
             } else if property_type == "number" {
                 JsValueType::JsNumber(edge_val)
             } else if property_type == "node" {
-                get_node_property(edge_start, 2, snapshot)
+                get_node_property(edge_val, 2, snapshot)
             } else {
                 panic!("unknkow property_type {} ", property_type)
             }
         }
-        EdgePropertyType::Arr(type_property) => {
-            JsValueType::JsString(type_property[edge_val].to_string())
+        EdgePropertyType::Arr(property_type_arr) => {
+            JsValueType::JsString(property_type_arr[edge_val].to_string())
         }
     };
     edge_property_val
 }
 
 fn get_node_property(node_start: usize, col: usize, snapshot: &Heapsnapshot) -> JsValueType {
-    // node_start 代表当前是第几个 node, col 代表属性的偏移量
+    // node_start 代表当前 node 的起始索引, col 代表属性的偏移量
     let offset = node_start + col; // 当前属性在 nodes 中的索引
     let node_val = snapshot.nodes[offset];
     let node_property_type: NodePropertyType = if col == 0 {
@@ -93,8 +102,8 @@ fn get_node_property(node_start: usize, col: usize, snapshot: &Heapsnapshot) -> 
                 panic!("unknkow property_type {} ", property_type)
             }
         }
-        NodePropertyType::Arr(type_property) => {
-            JsValueType::JsString(type_property[node_val].to_string())
+        NodePropertyType::Arr(property_type_arr) => {
+            JsValueType::JsString(property_type_arr[node_val].to_string())
         }
     };
     node_property_val
