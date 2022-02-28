@@ -1,3 +1,3 @@
-# `@napi-rs/package-template-android-arm-eabi`
+# `v8-profiler-rs-android-arm-eabi`
 
-This is the **armv7-linux-androideabi** binary for `@napi-rs/package-template`
+This is the **armv7-linux-androideabi** binary for `v8-profiler-rs`

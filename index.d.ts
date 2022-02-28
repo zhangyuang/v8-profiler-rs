@@ -6,4 +6,4 @@ export class ExternalObject<T> {
     [K: symbol]: T
   }
 }
-export function parseSnapshot(): string
+export function parseSnapShot(): string

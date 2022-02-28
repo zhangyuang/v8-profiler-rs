@@ -1,18 +1,18 @@
 name: CI
 env:
   DEBUG: napi:*
-  APP_NAME: package-template
-  MACOSX_DEPLOYMENT_TARGET: '10.13'
-'on':
+  APP_NAME: v8-profiler-rs
+  MACOSX_DEPLOYMENT_TARGET: "10.13"
+"on":
   push:
     branches:
       - main
     tags-ignore:
-      - '**'
+      - "**"
     paths-ignore:
-      - '**/*.md'
+      - "**/*.md"
       - LICENSE
-      - '**/*.gitignore'
+      - "**/*.gitignore"
       - .editorconfig
       - docs/**
   pull_request: null
@@ -227,9 +227,9 @@ jobs:
           - host: windows-latest
             target: x86_64-pc-windows-msvc
         node:
-          - '12'
-          - '14'
-          - '16'
+          - "12"
+          - "14"
+          - "16"
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v2
@@ -264,9 +264,9 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '12'
-          - '14'
-          - '16'
+          - "12"
+          - "14"
+          - "16"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -301,9 +301,9 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '12'
-          - '14'
-          - '16'
+          - "12"
+          - "14"
+          - "16"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -338,9 +338,9 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '12'
-          - '14'
-          - '16'
+          - "12"
+          - "14"
+          - "16"
     runs-on: ubuntu-latest
     steps:
       - run: docker run --rm --privileged multiarch/qemu-user-static:register --reset
@@ -364,7 +364,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ghcr.io/napi-rs/napi-rs/nodejs:aarch64-${{ matrix.node }}
-          options: '-v ${{ github.workspace }}:/build -w /build'
+          options: "-v ${{ github.workspace }}:/build -w /build"
           run: |
             set -e
             yarn test
@@ -396,7 +396,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: multiarch/alpine:aarch64-latest-stable
-          options: '-v ${{ github.workspace }}:/build -w /build'
+          options: "-v ${{ github.workspace }}:/build -w /build"
           run: |
             set -e
             apk add nodejs npm yarn
@@ -409,9 +409,9 @@ jobs:
       fail-fast: false
       matrix:
         node:
-          - '12'
-          - '14'
-          - '16'
+          - "12"
+          - "14"
+          - "16"
     runs-on: ubuntu-latest
     steps:
       - run: docker run --rm --privileged multiarch/qemu-user-static:register --reset
@@ -435,7 +435,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         with:
           image: ghcr.io/napi-rs/napi-rs/nodejs:armhf-${{ matrix.node }}
-          options: '-v ${{ github.workspace }}:/build -w /build'
+          options: "-v ${{ github.workspace }}:/build -w /build"
           run: |
             set -e
             yarn test

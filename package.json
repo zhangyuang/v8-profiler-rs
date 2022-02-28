@@ -1,6 +1,6 @@
 {
   "name": "v8-profiler-rs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Template project for writing node package with napi-rs",
   "main": "index.js",
   "license": "MIT",
@@ -17,7 +17,7 @@
     "index.js"
   ],
   "napi": {
-    "name": "package-template",
+    "name": "v8-profiler-rs",
     "triples": {
       "defaults": true,
       "additional": [
@@ -82,5 +82,20 @@
     "environmentVariables": {
       "TS_NODE_PROJECT": "./tsconfig.json"
     }
+  },
+  "optionalDependencies": {
+    "v8-profiler-rs-win32-x64-msvc": "1.0.1",
+    "v8-profiler-rs-darwin-x64": "1.0.1",
+    "v8-profiler-rs-linux-x64-gnu": "1.0.1",
+    "v8-profiler-rs-linux-x64-musl": "1.0.1",
+    "v8-profiler-rs-linux-arm64-gnu": "1.0.1",
+    "v8-profiler-rs-win32-ia32-msvc": "1.0.1",
+    "v8-profiler-rs-linux-arm-gnueabihf": "1.0.1",
+    "v8-profiler-rs-darwin-arm64": "1.0.1",
+    "v8-profiler-rs-android-arm64": "1.0.1",
+    "v8-profiler-rs-freebsd-x64": "1.0.1",
+    "v8-profiler-rs-linux-arm64-musl": "1.0.1",
+    "v8-profiler-rs-win32-arm64-msvc": "1.0.1",
+    "v8-profiler-rs-android-arm-eabi": "1.0.1"
   }
 }
