@@ -1,21 +1,19 @@
 import b from 'benny'
 
-import { plus100 } from '../index'
-
-function add(a: number) {
-  return a + 100
-}
+import { parseSnapshot } from '../index'
+//@ts-expect-error
+import { parseSnapshotJs } from '../snapshot.js'
 
 async function run() {
   await b.suite(
-    'Add 100',
+    'parseSnapShot',
 
-    b.add('Native a + 100', () => {
-      plus100(10)
+    b.add('Native parseSnapShot', () => {
+      parseSnapshot()
     }),
 
-    b.add('JavaScript a + 100', () => {
-      add(10)
+    b.add('JavaScript parseSnapShot', async () => {
+      await parseSnapshotJs()
     }),
 
     b.cycle(),

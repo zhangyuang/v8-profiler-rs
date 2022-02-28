@@ -1,4 +1,4 @@
-pub mod preset {
+pub mod define {
     use serde::{Deserialize, Serialize};
 
     pub const NodeTypesProperty: [&str; 14] = [
@@ -44,10 +44,10 @@ pub mod preset {
     }
     #[derive(Serialize, Deserialize)]
     pub struct SnapShot {
-        meta: Meta,
-        node_count: usize,
-        edge_count: usize,
-        trace_function_count: usize,
+        pub meta: Meta,
+        pub node_count: usize,
+        pub edge_count: usize,
+        pub trace_function_count: usize,
     }
     #[derive(Serialize, Deserialize)]
     pub struct Heapsnapshot {

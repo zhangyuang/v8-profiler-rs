@@ -1,5 +1,5 @@
-const { sync } = require('./index')
+const { parseSnapshot } = require('./index')
 
-console.assert(sync(0) === 100, 'Simple test failed')
-
-console.info('Simple test passed')
+const start = Date.now()
+parseSnapshot()
+console.log(Date.now() - start)

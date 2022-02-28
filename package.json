@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Template project for writing node package with napi-rs",
   "main": "index.js",
-  "repository": "git@github.com:napi-rs/package-template.git",
   "license": "MIT",
   "keywords": [
     "napi-rs",
@@ -45,7 +44,7 @@
   "scripts": {
     "artifacts": "napi artifacts",
     "bench": "node -r @swc-node/register benchmark/bench.ts",
-    "build": " V8_FROM_SOURCE=1 napi build --platform --release",
+    "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "format:rs": "cargo fmt",
     "prepublishOnly": "napi prepublish -t npm",
@@ -71,27 +70,7 @@
     "typescript": "^4.5.4"
   },
   "dependencies": {
-    "@node-rs/helper": "^1.2.1",
-    "bluebird": "^3.7.2",
-    "crypto": "^1.0.1",
-    "express": "^4.17.2",
-    "heapdump": "^0.3.15",
-    "v8-profiler-next": "^1.5.1"
-  },
-  "lint-staged": {
-    "*.@(js|ts|tsx)": [
-      "prettier --write",
-      "eslint -c .eslintrc.yml --fix"
-    ],
-    "*.@(yml|yaml)": [
-      "prettier --parser yaml --write"
-    ],
-    "*.md": [
-      "prettier --parser markdown --write"
-    ],
-    "*.json": [
-      "prettier --parser json --write"
-    ]
+    "@node-rs/helper": "^1.2.1"
   },
   "ava": {
     "require": [
@@ -103,12 +82,5 @@
     "environmentVariables": {
       "TS_NODE_PROJECT": "./tsconfig.json"
     }
-  },
-  "prettier": {
-    "printWidth": 120,
-    "semi": false,
-    "trailingComma": "all",
-    "singleQuote": true,
-    "arrowParens": "always"
   }
 }

@@ -3,7 +3,24 @@
 一个可以在线更加智能化的分析 v8 `heapsnapshot` 堆快照的项目，目前还在使用 `Rust` 开发中，欢迎 `watch & star`
 
 ```bash
-$ cargo run # 通过 heapsnapshot 文件解析为 node 对象信息存储在 bar.json
+$ cargo run # 通过 heapsnapshot 文件解析为 node 对象信息默认存储在 bar.json
+$ yarn build # 生成 .node 文件包含 parseSnapShot 方法
+$ yarn bench # benchmark 比较 Rust Napi binding 与 js 方法性能差距
+yarn run v1.22.10
+$ node -r @swc-node/register benchmark/bench.ts
+Running "parseSnapShot" suite...
+Progress: 100%
+
+  Native parseSnapShot:
+    16 ops/s, ±1.28%   | fastest
+
+  JavaScript parseSnapShot:
+    1 ops/s, ±38.28%    | slowest, 93.75% slower
+
+Finished 2 cases!
+  Fastest: Native parseSnapShot
+  Slowest: JavaScript parseSnapShot
+✨  Done in 15.78s.
 ```
 
 ## Node Struct

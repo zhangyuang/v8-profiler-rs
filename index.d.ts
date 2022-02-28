@@ -6,5 +6,4 @@ export class ExternalObject<T> {
     [K: symbol]: T
   }
 }
-export function initial(): void
-export function takeHeapSnapShot(path: string): void
+export function parseSnapshot(): string

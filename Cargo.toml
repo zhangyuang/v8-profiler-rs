@@ -1,8 +1,8 @@
 [package]
-authors = ["LongYinan <lynweklm@gmail.com>"]
+authors = ["yuuangzhang"]
 edition = "2021"
-name = "napi-package-template"
-version = "0.1.0"
+name = "v8-profile-rs"
+version = "1.0.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
