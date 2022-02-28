@@ -35,7 +35,7 @@
     }
   },
   "engines": {
-    "node": ">= 10"
+    "node": ">= 11"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -48,54 +48,23 @@
     "build:debug": "napi build --platform",
     "format:rs": "cargo fmt",
     "prepublishOnly": "napi prepublish -t npm",
-    "test": "ava",
-    "version": "napi version"
+    "version": "napi version",
+    "lint": "eslint . --ext .js,.ts --cache",
+    "lint:fix": "eslint . --ext .js,.ts --cache --fix && cargo fmt"
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.0.0",
     "@swc-node/register": "^1.4.2",
-    "@typescript-eslint/eslint-plugin": "^5.7.0",
-    "@typescript-eslint/parser": "^5.7.0",
-    "ava": "^3.15.0",
     "benny": "^3.7.1",
-    "chalk": "^5.0.0",
-    "eslint": "^8.4.1",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-import": "^2.25.3",
-    "eslint-plugin-prettier": "^4.0.0",
-    "husky": "^7.0.4",
-    "lint-staged": "^12.1.2",
-    "npm-run-all": "^4.1.5",
-    "prettier": "^2.5.1",
+    "eslint-config-standard-react-ts": "^1.0.13",
     "typescript": "^4.5.4"
   },
   "dependencies": {
     "@node-rs/helper": "^1.2.1"
   },
-  "ava": {
-    "require": [
-      "@swc-node/register"
-    ],
-    "extensions": [
-      "ts"
-    ],
-    "environmentVariables": {
-      "TS_NODE_PROJECT": "./tsconfig.json"
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn lint"
     }
-  },
-  "optionalDependencies": {
-    "v8-profiler-rs-win32-x64-msvc": "1.0.1",
-    "v8-profiler-rs-darwin-x64": "1.0.1",
-    "v8-profiler-rs-linux-x64-gnu": "1.0.1",
-    "v8-profiler-rs-linux-x64-musl": "1.0.1",
-    "v8-profiler-rs-linux-arm64-gnu": "1.0.1",
-    "v8-profiler-rs-win32-ia32-msvc": "1.0.1",
-    "v8-profiler-rs-linux-arm-gnueabihf": "1.0.1",
-    "v8-profiler-rs-darwin-arm64": "1.0.1",
-    "v8-profiler-rs-android-arm64": "1.0.1",
-    "v8-profiler-rs-freebsd-x64": "1.0.1",
-    "v8-profiler-rs-linux-arm64-musl": "1.0.1",
-    "v8-profiler-rs-win32-arm64-msvc": "1.0.1",
-    "v8-profiler-rs-android-arm-eabi": "1.0.1"
   }
 }

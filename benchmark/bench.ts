@@ -1,7 +1,7 @@
 import b from 'benny'
 
-import { parseSnapshot } from '../index'
-//@ts-expect-error
+import { parseSnapShot } from '../index'
+// @ts-expect-error
 import { parseSnapshotJs } from '../snapshot.js'
 
 async function run() {
@@ -9,7 +9,7 @@ async function run() {
     'parseSnapShot',
 
     b.add('Native parseSnapShot', () => {
-      parseSnapshot()
+      parseSnapShot()
     }),
 
     b.add('JavaScript parseSnapShot', async () => {
@@ -17,7 +17,7 @@ async function run() {
     }),
 
     b.cycle(),
-    b.complete(),
+    b.complete()
   )
 }
 

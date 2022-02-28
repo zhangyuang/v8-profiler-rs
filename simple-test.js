@@ -1,5 +1,9 @@
-const { parseSnapshot } = require('./index')
+const { parseSnapShot } = require('./index')
+const { parseSnapshotJs } = require('./snapshot')
 
-const start = Date.now()
-parseSnapshot()
-console.log(Date.now() - start)
+let start = Date.now()
+parseSnapshotJs()
+console.log('js parse time', Date.now() - start)
+start = Date.now()
+parseSnapShot()
+console.log('napi parse time', Date.now() - start)
