@@ -121,6 +121,5 @@ Cargo.lock
 
 *.node
 *.cpuprofile
-*.heapsnapshot
 *.json
 .DS_Store

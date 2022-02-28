@@ -1,13 +1,7 @@
 const fs = require('fs')
 
-
-
-function heapsnapshot() {
-  return 'heapdump.heapsnapshot'
-}
-
 function restoreDump(dumpName) {
-  const raw = fs.readFileSync(dumpName, 'utf-8').toString()
+  const raw = fs.readFileSync(dumpName).toString()
   return JSON.parse(raw)
 }
 
@@ -118,29 +112,15 @@ function insertEdges(heap) {
       node.edges.push(values)
     }
   }
-  // fs.writeFileSync('js.json', JSON.stringify(node_rows))
 }
 
 function task(label, fn) {
   fn()
 }
 
-exports.parseSnapshotJs = function parseSnapshotJs() {
-  const dump = heapsnapshot()
-  const heap = restoreDump(dump)
+exports.parseSnapshotJs = function parseSnapshotJs(path) {
+  const heap = restoreDump(path)
   insertNodes(heap)
   insertEdges(heap)
   return JSON.stringify(node_rows)
 }
-async function run() {
-  const start = Date.now()
-  const dump = heapsnapshot()
-  const heap = await restoreDump(dump)
-  insertNodes(heap)
-  insertEdges(heap)
-
-  console.log(Date.now() - start)
-  console.log('🎉')
-}
-
-// run();

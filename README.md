@@ -21,6 +21,9 @@ Finished 2 cases!
   Fastest: Native parseSnapShot
   Slowest: JavaScript parseSnapShot
 ✨  Done in 15.78s.
+$ node simple-test.js
+js parse time 225ms
+napi parse time 108ms
 ```
 
 ## Node Struct

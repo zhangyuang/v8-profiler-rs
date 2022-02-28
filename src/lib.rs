@@ -16,7 +16,7 @@ mod snapshot;
 use snapshot::snapshot::parse_snapshot;
 
 #[napi]
-pub fn parseSnapShot() -> String {
-    let foo = parse_snapshot("heapdump.heapsnapshot");
+pub fn parseSnapShot(path: String) -> String {
+    let foo = parse_snapshot(&path);
     foo
 }

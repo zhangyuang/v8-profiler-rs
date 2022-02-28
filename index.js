@@ -7,7 +7,7 @@ let nativeBinding = null
 let localFileExisted = false
 let loadError = null
 
-function isMusl () {
+function isMusl() {
   // For Node 10
   if (!process.report || typeof process.report.getReport !== 'function') {
     try {
@@ -233,7 +233,7 @@ if (!nativeBinding) {
   if (loadError) {
     throw loadError
   }
-  throw new Error('Failed to load native binding')
+  throw new Error(`Failed to load native binding`)
 }
 
 const { parseSnapShot } = nativeBinding

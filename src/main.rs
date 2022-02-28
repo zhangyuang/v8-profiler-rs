@@ -1,8 +1,13 @@
 mod define;
 mod snapshot;
 use snapshot::snapshot::parse_snapshot;
-use std::fs::write;
+use std::time::{SystemTime, UNIX_EPOCH};
 fn main() {
-    let str = parse_snapshot("heapdump.heapsnapshot");
-    write("bar.json", str).unwrap();
+    let now = SystemTime::now();
+    parse_snapshot("v8.heapsnapshot");
+    println!(
+        "{:?}",
+        SystemTime::now().duration_since(UNIX_EPOCH).unwrap()
+            - now.duration_since(UNIX_EPOCH).unwrap()
+    );
 }

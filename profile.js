@@ -1,12 +1,6 @@
 var fs = require('fs')
-// const { takeHeapSnapShot, initial } = require('./index')
 let leakObject = null
 let count = 0
-// initial()
-// takeHeapSnapShot('snapshot.heapsnapshot')
-// console.log(process.memoryUsage())
-
-// const { writeHeapSnapshot } = require('v8')
 setInterval(function testMemoryLeak() {
   console.log(count)
   const originLeakObject = leakObject
@@ -16,10 +10,11 @@ setInterval(function testMemoryLeak() {
     }
   }
   if (count === 30) {
-    // require('heapdump').writeSnapshot('snapshotheapdump.heapsnapshot');
     const stream = require('v8').getHeapSnapshot()
-    stream.pipe(fs.createWriteStream('heapdump.heapsnapshot'))
-    // process.exit()
+    stream.pipe(fs.createWriteStream('v8.heapsnapshot'))
+    stream.on('end', () => {
+      process.exit()
+    })
   }
   leakObject = {
     count: String(count++),

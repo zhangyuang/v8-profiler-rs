@@ -9,11 +9,11 @@ async function run() {
     'parseSnapShot',
 
     b.add('Native parseSnapShot', () => {
-      parseSnapShot()
+      parseSnapShot('v8.heapsnapshot')
     }),
 
-    b.add('JavaScript parseSnapShot', async () => {
-      await parseSnapshotJs()
+    b.add('JavaScript parseSnapShot', () => {
+      parseSnapshotJs('v8.heapsnapshot')
     }),
 
     b.cycle(),
