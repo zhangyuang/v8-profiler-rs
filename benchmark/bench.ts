@@ -5,6 +5,7 @@ import { parseSnapShot } from '../index'
 import { parseSnapshotJs } from '../snapshot.js'
 
 async function run() {
+
   await b.suite(
     'parseSnapShot',
 
@@ -18,6 +19,7 @@ async function run() {
 
     b.cycle(),
     b.complete()
+
   )
 }
 

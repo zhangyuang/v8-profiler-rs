@@ -22,7 +22,6 @@ pub mod snapshot {
                 }
             })
             .collect();
-
         let mut edge_index = 0; // 代表当前是第几个 edge
         node_struct_arr
             .iter_mut()
@@ -65,7 +64,11 @@ pub mod snapshot {
         let edge_property_val: JsValueType = match edge_property_type {
             EdgePropertyType::Str(property_type) => {
                 if property_type == "string" || property_type == "string_or_number" {
-                    JsValueType::JsString(snapshot.strings[edge_val].to_string())
+                    if edge_val > snapshot.strings.len() {
+                        JsValueType::JsString("".to_string())
+                    } else {
+                        JsValueType::JsString(snapshot.strings[edge_val].to_string())
+                    }
                 } else if property_type == "number" {
                     JsValueType::JsNumber(edge_val)
                 } else if property_type == "node" {

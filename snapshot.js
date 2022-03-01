@@ -1,10 +1,5 @@
 const fs = require('fs')
 
-function restoreDump(dumpName) {
-  const raw = fs.readFileSync(dumpName).toString()
-  return JSON.parse(raw)
-}
-
 function node_value({ heap, node, node_start, field }) {
   const meta = heap.snapshot.meta
   const strings = heap.strings
@@ -17,7 +12,10 @@ function node_value({ heap, node, node_start, field }) {
   node_start = node_start || node * node_field_count
   const value = node_field_values[node_start + field]
   const type = node_field_types[field]
-  if (type === 'string') return strings[value]
+  if (type === 'string') {
+
+    return strings[value]
+  }
   if (type === 'number') return value
   if (Array.isArray(type)) return type[value]
   throw new Error('unsupported type: ' + type)
@@ -55,7 +53,9 @@ function edge_value({ heap, edge, field, resolvers }) {
 
   const value = edge_field_values[edge + field]
   const type = edge_field_types[field]
-  if (type === 'string' || type === 'string_or_number') return strings[value]
+  if (type === 'string' || type === 'string_or_number') {
+    return strings[value]
+  }
   if (type === 'number') return value
   if (Array.isArray(type)) return type[value]
   else if (resolvers[type]) return resolvers[type](value)
@@ -114,12 +114,8 @@ function insertEdges(heap) {
   }
 }
 
-function task(label, fn) {
-  fn()
-}
-
 exports.parseSnapshotJs = function parseSnapshotJs(path) {
-  const heap = restoreDump(path)
+  const heap = JSON.parse(fs.readFileSync(path).toString())
   insertNodes(heap)
   insertEdges(heap)
   return JSON.stringify(node_rows)

@@ -17,6 +17,5 @@ use snapshot::snapshot::parse_snapshot;
 
 #[napi]
 pub fn parseSnapShot(path: String) -> String {
-    let foo = parse_snapshot(&path);
-    foo
+    parse_snapshot(&path)
 }
