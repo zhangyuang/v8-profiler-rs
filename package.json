@@ -42,6 +42,8 @@
     "access": "public"
   },
   "scripts": {
+    "init": "yarn && npm run build && cd server && yarn",
+    "start": "npm run build && cd server && npm start",
     "artifacts": "napi artifacts",
     "bench": "node -r @swc-node/register benchmark/bench.ts",
     "build": "napi build --platform --release",
@@ -56,7 +58,7 @@
     "@napi-rs/cli": "^2.0.0",
     "@swc-node/register": "^1.4.2",
     "benny": "^3.7.1",
-    "eslint-config-standard-react-ts": "^1.0.13",
+    "eslint-config-standard-vue-ts": "^1.0.13",
     "typescript": "^4.5.4"
   },
   "dependencies": {

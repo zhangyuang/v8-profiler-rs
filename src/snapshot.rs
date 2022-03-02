@@ -4,7 +4,7 @@ pub mod snapshot {
         JsValueType, Node, NodeFields, NodeOthersProperty, NodePropertyType, NodeTypesProperty,
     };
     use std::fs::read_to_string;
-    pub fn parse_snapshot(path: &str) -> String {
+    pub fn parse_snapshot(path: &str) -> Vec<Node> {
         let snapshot = read_to_snapshot(path);
         let nodes = snapshot.snapshot.node_count;
         let mut node_struct_arr: Vec<Node> = (0..nodes)
@@ -46,7 +46,7 @@ pub mod snapshot {
                     node.edges = Some(edges);
                 }
             });
-        serde_json::to_string(&node_struct_arr).unwrap()
+        node_struct_arr
     }
     fn read_to_snapshot(path: &str) -> Heapsnapshot {
         let snapshot_string = read_to_string(path).expect("file not found");

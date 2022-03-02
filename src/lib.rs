@@ -13,9 +13,25 @@ use napi_derive::napi;
 static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 mod define;
 mod snapshot;
+use define::define::JsValueType;
 use snapshot::snapshot::parse_snapshot;
-
+use std::collections::HashMap;
 #[napi]
 pub fn parseSnapShot(path: String) -> String {
-    parse_snapshot(&path)
+    serde_json::to_string(&parse_snapshot(&path)).unwrap()
+}
+#[napi]
+pub fn parseSnapShotWithMap(path: String) -> String {
+    let node_struct_arr = parse_snapshot(&path);
+    let mut hash_map = HashMap::new();
+    node_struct_arr.iter().for_each(|node| {
+        if let JsValueType::JsString(name) = &node.name {
+            if hash_map.get(name).is_none() {
+                hash_map.insert(name, vec![]);
+            } else {
+                hash_map.get_mut(name).unwrap().push(node);
+            }
+        }
+    });
+    serde_json::to_string(&hash_map).unwrap()
 }

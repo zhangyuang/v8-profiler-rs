@@ -236,6 +236,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { parseSnapShot } = nativeBinding
+const { parseSnapShot, parseSnapShotWithMap } = nativeBinding
 
 module.exports.parseSnapShot = parseSnapShot
+module.exports.parseSnapShotWithMap = parseSnapShotWithMap
