@@ -8,6 +8,7 @@
 *.js    text eol=lf merge=union 
 *.json  text eol=lf merge=union 
 *.debug text eol=lf merge=union 
+* linguist-language=Rust
 
 # Generated codes
 index.js linguist-detectable=false

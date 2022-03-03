@@ -114,9 +114,10 @@ function insertEdges(heap) {
   }
 }
 
-exports.parseSnapshotJs = function parseSnapshotJs(path) {
+exports.parseSnapshotWithJS = function parseSnapshotJs(path) {
   const heap = JSON.parse(fs.readFileSync(path).toString())
   insertNodes(heap)
   insertEdges(heap)
-  return JSON.stringify(node_rows)
+  const str = JSON.stringify(node_rows)
+  return str
 }

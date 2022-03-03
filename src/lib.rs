@@ -28,9 +28,8 @@ pub fn parseSnapShotWithMap(path: String) -> String {
         if let JsValueType::JsString(name) = &node.name {
             if hash_map.get(name).is_none() {
                 hash_map.insert(name, vec![]);
-            } else {
-                hash_map.get_mut(name).unwrap().push(node);
             }
+            hash_map.get_mut(name).unwrap().push(node);
         }
     });
     serde_json::to_string(&hash_map).unwrap()

@@ -2,7 +2,7 @@ import b from 'benny'
 
 import { parseSnapShot } from '../index'
 // @ts-expect-error
-import { parseSnapshotJs } from '../snapshot.js'
+import { parseSnapshotWithJS } from '../snapshot.js'
 
 async function run() {
 
@@ -14,7 +14,7 @@ async function run() {
     }),
 
     b.add('JavaScript parseSnapShot', () => {
-      parseSnapshotJs('v8.heapsnapshot')
+      parseSnapshotWithJS('v8.heapsnapshot')
     }),
 
     b.cycle(),
