@@ -1,5 +1,6 @@
 pub mod define {
     use serde::{Deserialize, Serialize};
+    use std::cmp::Ordering;
 
     pub const NodeTypesProperty: [&str; 14] = [
         "hidden",
@@ -61,7 +62,7 @@ pub mod define {
         pub samples: Vec<usize>,
     }
 
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct Node {
         pub node_type: JsValueType,
         pub name: JsValueType,
@@ -69,9 +70,29 @@ pub mod define {
         pub self_size: JsValueType,
         pub edge_count: JsValueType,
         pub trace_node_id: JsValueType,
+        pub retained_size: Option<usize>,
         pub edges: Option<Vec<Edge>>,
     }
-    #[derive(Debug, Serialize, Deserialize)]
+
+    impl PartialOrd for Node {
+        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            if self.self_size > other.self_size {
+                Some(Ordering::Greater)
+            } else if self.self_size == other.self_size {
+                Some(Ordering::Equal)
+            } else {
+                Some(Ordering::Less)
+            }
+        }
+    }
+
+    impl PartialEq for Node {
+        fn eq(&self, other: &Self) -> bool {
+            self.self_size == other.self_size
+        }
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct Edge {
         pub edge_type: JsValueType,
         pub name_or_index: JsValueType,
@@ -85,10 +106,55 @@ pub mod define {
         Arr([&'static str; 7]),
         Str(&'static str),
     }
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     #[serde(untagged)]
     pub enum JsValueType {
         JsString(String),
         JsNumber(usize),
+    }
+    impl PartialEq for JsValueType {
+        fn eq(&self, other: &Self) -> bool {
+            use JsValueType::*;
+            match (self, other) {
+                (&JsString(ref a), &JsString(ref b)) => a == b,
+                (&JsNumber(ref a), &JsNumber(ref b)) => a == b,
+                _ => false,
+            }
+        }
+    }
+    impl PartialOrd for JsValueType {
+        fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            use JsValueType::*;
+            match (self, other) {
+                (&JsNumber(ref a), &JsNumber(ref b)) => {
+                    if a - b > 0 {
+                        Some(Ordering::Greater)
+                    } else if a == b {
+                        Some(Ordering::Equal)
+                    } else {
+                        Some(Ordering::Less)
+                    }
+                }
+                _ => None,
+            }
+        }
+    }
+    impl From<&JsValueType> for usize {
+        fn from(s: &JsValueType) -> usize {
+            use JsValueType::*;
+            match s {
+                JsNumber(val) => *val,
+                JsString(val) => panic!("JsString {:?} cannot convert to usize", val),
+            }
+        }
+    }
+    impl From<&JsValueType> for String {
+        fn from(s: &JsValueType) -> String {
+            use JsValueType::*;
+            match s {
+                JsNumber(val) => panic!("JsNumber {:?} cannot convert to String", val),
+                JsString(val) => val.clone(),
+            }
+        }
     }
 }

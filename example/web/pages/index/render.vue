@@ -8,6 +8,6 @@ import { onMounted } from 'vue'
 import axios from 'axios'
 onMounted(async () => {
   const res = await axios.get('/api/parsesnapshot')
-  console.log(res.data.closure)
+  console.log(res.data)
 })
 </script>

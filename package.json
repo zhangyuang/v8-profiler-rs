@@ -43,7 +43,7 @@
   },
   "scripts": {
     "init": "yarn && npm run build && cd example && yarn",
-    "start": "npm run build && cd example && npm run start:vite",
+    "start": "npm run build && cp *.node index.js index.d.ts snapshot.js ./example && cd example && npm run start:vite",
     "artifacts": "napi artifacts",
     "bench": "node -r @swc-node/register benchmark/bench.ts",
     "build": "napi build --platform --release",

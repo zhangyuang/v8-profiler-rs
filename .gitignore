@@ -123,4 +123,6 @@ Cargo.lock
 *.cpuprofile
 *.json
 .DS_Store
-!server/**/*.json
+!example/**/*.json
+example/index.js
+example/index.d.ts

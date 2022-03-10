@@ -2,11 +2,16 @@
 
 一个可以在线更加智能化的分析 v8 `heapsnapshot` 堆快照的项目，目前还在使用 `Rust` 开发中，欢迎 `watch & star`
 
+## 开发环境
+
+需要安装 `Rust & Node.js` 环境
+
+## 本地调试
+
 ```bash
 $ node memoryleak.js # 生成 v8.heapsnapshot
-$ cargo run # 通过 heapsnapshot 文件解析为 node 对象信息默认存储在 snapshot.json
-$ yarn build # 生成 .node 文件包含 parseSnapShot 方法
-$ yarn bench # benchmark 比较 Rust Napi binding 与 js 方法性能差距
+$ yarn build # 生成 .node 二进制文件 通过 index.js 可直接调用
+$ yarn bench # benchmark compare rust napi with origin javascript
 yarn run v1.22.10
 $ node -r @swc-node/register benchmark/bench.ts
 Running "parseSnapShot" suite...

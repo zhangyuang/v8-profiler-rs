@@ -1,5 +1,5 @@
-const { parseSnapShot } = require('./index')
-const { parseSnapshotWithJS } = require('./snapshot')
+const { parseSnapShot, parseSnapShotWithMap } = require('./index')
+const { parseSnapshotWithJS, parseSnapshotWithJSMap } = require('./snapshot')
 
 let start = Date.now()
 parseSnapshotWithJS('v8.heapsnapshot')

@@ -1,8 +1,8 @@
 import b from 'benny'
 
 import { parseSnapShot } from '../index'
-// @ts-expect-error
-import { parseSnapshotWithJS } from '../snapshot.js'
+
+const { parseSnapshotWithJS } = require('../snapshot.js')
 
 async function run() {
 
