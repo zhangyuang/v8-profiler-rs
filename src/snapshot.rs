@@ -1,5 +1,4 @@
 pub mod snapshot {
-
     use crate::define::define::{
         Edge, EdgeFields, EdgeOthersProperty, EdgePropertyType, EdgeTypesProperty, Heapsnapshot,
         JsValueType, Node, NodeFields, NodeOthersProperty, NodePropertyType, NodeTypesProperty,
@@ -10,7 +9,8 @@ pub mod snapshot {
     use std::rc::Rc;
 
     pub fn parse_snapshot(path: &str) -> Vec<Rc<RefCell<Node>>> {
-        let mut map = HashMap::new();
+        let mut node_map = HashMap::new();
+        let mut find_parent_map = HashMap::new();
         let snapshot = read_to_snapshot(path);
         let nodes = snapshot.snapshot.node_count;
         let node_struct_arr: Vec<Rc<RefCell<Node>>> = (0..nodes)
@@ -27,7 +27,7 @@ pub mod snapshot {
                     edges: None,
                     retained_size: None,
                 }));
-                map.insert(usize::from(&node.borrow_mut().id), Rc::clone(&node));
+                node_map.insert(usize::from(&node.borrow_mut().id), Rc::clone(&node));
                 Rc::clone(&node)
             })
             .collect();
@@ -35,7 +35,6 @@ pub mod snapshot {
         node_struct_arr.iter().for_each(|node| {
             let mut node_borrow_mut = node.borrow_mut();
             let edge_count = usize::from(&node_borrow_mut.edge_count);
-            let mut retained_size = usize::from(&node_borrow_mut.self_size);
             let edges = (0..edge_count)
                 .map(|_| {
                     let edge_start = edge_index * EdgeFields.len();
@@ -44,44 +43,40 @@ pub mod snapshot {
                         name_or_index: get_edgs_property(edge_start, 1, &snapshot),
                         to_node: get_edgs_property(edge_start, 2, &snapshot),
                     };
-                    let to_node = map.get(&usize::from(&edge.to_node)).unwrap();
-                    if to_node.as_ptr() != node.as_ptr() {
-                        if to_node.borrow().retained_size.is_some() {
-                            retained_size += *&to_node.borrow().retained_size.unwrap();
-                        }
-                    };
+                    let to_node_id = usize::from(&edge.to_node);
+                    find_parent_map
+                        .entry(to_node_id)
+                        .or_insert(vec![])
+                        .push(usize::from(&node_borrow_mut.id));
                     edge_index += 1;
                     edge
                 })
                 .collect();
             node_borrow_mut.edges = Some(edges);
+        });
+        node_struct_arr.iter().for_each(|node| {
+            let mut node_borrow_mut = node.borrow_mut();
+            let mut retained_size = usize::from(&node_borrow_mut.self_size);
+            let parent_node_id = &node_borrow_mut.id;
+            let edges = &node_borrow_mut.edges;
+            if let Some(edges) = edges {
+                edges.iter().for_each(|edge| {
+                    let to_node_id = usize::from(&edge.to_node);
+                    let parent_vec = find_parent_map.get(&to_node_id);
+                    if let Some(parent_vec) = parent_vec {
+                        if parent_vec.len() == 1 && parent_vec[0] == usize::from(parent_node_id) {
+                            let to_node = node_map.get(&to_node_id).unwrap();
+                            if to_node.as_ptr() != node.as_ptr() {
+                                retained_size += usize::from(&to_node.borrow().self_size);
+                            }
+                        }
+                    }
+                })
+            }
             node_borrow_mut.retained_size = Some(retained_size)
         });
-        // node_struct_arr.iter().for_each(|node| {});
-        // let mut retained_size = usize::from(&node_borrow_mut.self_size);
-        // let to_node = map.get(&usize::from(&edge.to_node)).unwrap();
-        // if to_node.as_ptr() != node.as_ptr() {
-        //     retained_size += usize::from(&to_node.borrow().self_size);
-        // }
         node_struct_arr
     }
-    // fn calculate_retained_size(
-    //     node: &Rc<RefCell<Node>>,
-    //     map: &HashMap<usize, Rc<RefCell<Node>>>,
-    // ) -> usize {
-    //     let node_borrow_mut = node.borrow_mut();
-    //     let mut retained_size = usize::from(&node_borrow_mut.self_size);
-    //     let edges = &node_borrow_mut.edges;
-    //     if let Some(edges) = edges {
-    //         edges.iter().for_each(|edge| {
-    //             let to_node = map.get(&usize::from(&edge.to_node)).unwrap();
-    //             if to_node.as_ptr() != node.as_ptr() {
-    //                 retained_size += usize::from(&to_node.borrow().retained_size);
-    //             }
-    //         })
-    //     };
-    //     retained_size
-    // }
 
     fn read_to_snapshot(path: &str) -> Heapsnapshot {
         let snapshot_string = read_to_string(path).expect("file not found");
