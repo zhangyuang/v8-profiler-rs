@@ -2,18 +2,18 @@ pub mod snapshot {
     use crate::define::define::{
         Edge, EdgeFields, EdgeOthersProperty, EdgePropertyType, EdgeTypesProperty, Heapsnapshot,
         JsValueType, Node, NodeFields, NodeOthersProperty, NodePropertyType, NodeTypesProperty,
+        RcNode,
     };
     use std::cell::RefCell;
     use std::collections::HashMap;
     use std::fs::read_to_string;
     use std::rc::Rc;
-
-    pub fn parse_snapshot(path: &str) -> Vec<Rc<RefCell<Node>>> {
+    pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
         let mut node_map = HashMap::new();
         let mut find_parent_map = HashMap::new();
         let snapshot = read_to_snapshot(path);
         let nodes = snapshot.snapshot.node_count;
-        let node_struct_arr: Vec<Rc<RefCell<Node>>> = (0..nodes)
+        let node_struct_arr: Vec<RcNode> = (0..nodes)
             .enumerate()
             .map(|(i, _)| {
                 let node_start = i * NodeFields.len();
@@ -55,27 +55,62 @@ pub mod snapshot {
             node_borrow_mut.edges = Some(edges);
         });
         node_struct_arr.iter().for_each(|node| {
-            let mut node_borrow_mut = node.borrow_mut();
-            let mut retained_size = usize::from(&node_borrow_mut.self_size);
-            let parent_node_id = &node_borrow_mut.id;
-            let edges = &node_borrow_mut.edges;
-            if let Some(edges) = edges {
+            let mut node_borrow_mut = node.borrow();
+            let retained_size = Some(calculate_retained_size(
+                usize::from(&node_borrow_mut.id),
+                &find_parent_map,
+                &node_map,
+            ));
+            println!("{:?}{:?}", node_borrow_mut.id, retained_size)
+        });
+        node_struct_arr
+    }
+    use std::collections::VecDeque;
+
+    fn calculate_retained_size(
+        node_id: usize,
+        find_parent_map: &HashMap<usize, Vec<usize>>,
+        node_map: &HashMap<usize, RcNode>,
+    ) -> usize {
+        let mut queue = VecDeque::new();
+        queue.push_back(node_id);
+        let mut retained_size = 0;
+        let mut has_free: HashMap<usize, bool> = HashMap::new();
+        let mut is_root = true;
+        while queue.len() != 0 {
+            let edge_node_id = queue.pop_front().unwrap();
+            let mut can_free = true;
+            if !is_root {
+                let parent = find_parent_map.get(&edge_node_id).unwrap();
+                for parent_id in parent {
+                    if has_free.get(parent_id).is_none() {
+                        // 如果当前节点的父节点没有全部被释放，则当前节点也不能被释放
+                        can_free = false;
+                        break;
+                    }
+                }
+            } else {
+                is_root = false
+            }
+            let edge_node = node_map.get(&edge_node_id).unwrap().borrow();
+            if can_free {
+                // 说明当前节点能够被释放
+                has_free.insert(edge_node_id, true);
+                retained_size += usize::from(&edge_node.self_size);
+            } else {
+                continue;
+            }
+
+            if let Some(edges) = &edge_node.edges {
                 edges.iter().for_each(|edge| {
-                    let to_node_id = usize::from(&edge.to_node);
-                    let parent_vec = find_parent_map.get(&to_node_id);
-                    if let Some(parent_vec) = parent_vec {
-                        if parent_vec.len() == 1 && parent_vec[0] == usize::from(parent_node_id) {
-                            let to_node = node_map.get(&to_node_id).unwrap();
-                            if to_node.as_ptr() != node.as_ptr() {
-                                retained_size += usize::from(&to_node.borrow().self_size);
-                            }
-                        }
+                    let to_node = node_map.get(&usize::from(&edge.to_node)).unwrap();
+                    if usize::from(&to_node.borrow().id) != edge_node_id {
+                        queue.push_back(usize::from(&to_node.borrow().id))
                     }
                 })
             }
-            node_borrow_mut.retained_size = Some(retained_size)
-        });
-        node_struct_arr
+        }
+        retained_size
     }
 
     fn read_to_snapshot(path: &str) -> Heapsnapshot {

@@ -1,7 +1,8 @@
 pub mod define {
     use serde::{Deserialize, Serialize};
+    use std::cell::RefCell;
     use std::cmp::Ordering;
-
+    use std::rc::Rc;
     pub const NodeTypesProperty: [&str; 14] = [
         "hidden",
         "array",
@@ -73,6 +74,7 @@ pub mod define {
         pub retained_size: Option<usize>,
         pub edges: Option<Vec<Edge>>,
     }
+    pub type RcNode = Rc<RefCell<Node>>;
 
     impl PartialOrd for Node {
         fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
