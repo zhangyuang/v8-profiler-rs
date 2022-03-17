@@ -10,7 +10,6 @@ pub mod snapshot {
     use std::rc::Rc;
     pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
         let mut node_map = HashMap::new();
-        let mut find_parent_map = HashMap::new();
         let snapshot = read_to_snapshot(path);
         let nodes = snapshot.snapshot.node_count;
         let node_struct_arr: Vec<RcNode> = (0..nodes)
@@ -24,8 +23,9 @@ pub mod snapshot {
                     self_size: get_node_property(node_start, 3, &snapshot),
                     edge_count: get_node_property(node_start, 4, &snapshot),
                     trace_node_id: get_node_property(node_start, 5, &snapshot),
-                    edges: None,
+                    edges: vec![],
                     retained_size: None,
+                    parent_node: vec![],
                 }));
                 node_map.insert(usize::from(&node.borrow_mut().id), Rc::clone(&node));
                 Rc::clone(&node)
@@ -33,8 +33,9 @@ pub mod snapshot {
             .collect();
         let mut edge_index = 0; // 代表当前是第几个 edge
         node_struct_arr.iter().for_each(|node| {
-            let mut node_borrow_mut = node.borrow_mut();
-            let edge_count = usize::from(&node_borrow_mut.edge_count);
+            let mut node = node.borrow_mut();
+            let edge_count = usize::from(&node.edge_count);
+            let node_id = usize::from(&node.id);
             let edges = (0..edge_count)
                 .map(|_| {
                     let edge_start = edge_index * EdgeFields.len();
@@ -44,34 +45,27 @@ pub mod snapshot {
                         to_node: get_edgs_property(edge_start, 2, &snapshot),
                     };
                     let to_node_id = usize::from(&edge.to_node);
-                    find_parent_map
-                        .entry(to_node_id)
-                        .or_insert(vec![])
-                        .push(usize::from(&node_borrow_mut.id));
+                    let to_node = node_map.get(&to_node_id);
+                    if to_node_id != node_id {
+                        to_node.unwrap().borrow_mut().parent_node.push(node_id);
+                    }
+
                     edge_index += 1;
                     edge
                 })
                 .collect();
-            node_borrow_mut.edges = Some(edges);
+            node.edges = edges;
         });
         node_struct_arr.iter().for_each(|node| {
-            let mut node_borrow_mut = node.borrow();
-            let retained_size = Some(calculate_retained_size(
-                usize::from(&node_borrow_mut.id),
-                &find_parent_map,
-                &node_map,
-            ));
-            println!("{:?}{:?}", node_borrow_mut.id, retained_size)
+            let node = node.borrow();
+            let retained_size = Some(calculate_retained_size(usize::from(&node.id), &node_map));
+            // println!("{:?}{:?}", node.id, retained_size)
         });
         node_struct_arr
     }
     use std::collections::VecDeque;
 
-    fn calculate_retained_size(
-        node_id: usize,
-        find_parent_map: &HashMap<usize, Vec<usize>>,
-        node_map: &HashMap<usize, RcNode>,
-    ) -> usize {
+    fn calculate_retained_size(node_id: usize, node_map: &HashMap<usize, RcNode>) -> usize {
         let mut queue = VecDeque::new();
         queue.push_back(node_id);
         let mut retained_size = 0;
@@ -81,9 +75,10 @@ pub mod snapshot {
             let edge_node_id = queue.pop_front().unwrap();
             let mut can_free = true;
             if !is_root {
-                let parent = find_parent_map.get(&edge_node_id).unwrap();
+                let parent = &node_map.get(&edge_node_id).unwrap().borrow().parent_node;
                 for parent_id in parent {
-                    if has_free.get(parent_id).is_none() {
+                    if has_free.get(parent_id).is_none()
+                    {
                         // 如果当前节点的父节点没有全部被释放，则当前节点也不能被释放
                         can_free = false;
                         break;
@@ -101,14 +96,12 @@ pub mod snapshot {
                 continue;
             }
 
-            if let Some(edges) = &edge_node.edges {
-                edges.iter().for_each(|edge| {
-                    let to_node = node_map.get(&usize::from(&edge.to_node)).unwrap();
-                    if usize::from(&to_node.borrow().id) != edge_node_id {
-                        queue.push_back(usize::from(&to_node.borrow().id))
-                    }
-                })
-            }
+            edge_node.edges.iter().for_each(|edge| {
+                let to_node = node_map.get(&usize::from(&edge.to_node)).unwrap();
+                if usize::from(&to_node.borrow().id) != edge_node_id {
+                    queue.push_back(usize::from(&to_node.borrow().id))
+                }
+            });
         }
         retained_size
     }

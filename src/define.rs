@@ -72,7 +72,8 @@ pub mod define {
         pub edge_count: JsValueType,
         pub trace_node_id: JsValueType,
         pub retained_size: Option<usize>,
-        pub edges: Option<Vec<Edge>>,
+        pub parent_node: Vec<usize>,
+        pub edges: Vec<Edge>,
     }
     pub type RcNode = Rc<RefCell<Node>>;
 

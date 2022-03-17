@@ -114,5 +114,6 @@ exports.parseSnapshotWithJS = function parseSnapshotJs(path) {
   insertNodes(heap)
   insertEdges(heap)
   const str = JSON.stringify(node_rows)
+  fs.writeFileSync('./snapshotjs.json', str)
   return str
 }
