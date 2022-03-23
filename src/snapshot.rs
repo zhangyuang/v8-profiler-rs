@@ -47,8 +47,10 @@ pub mod snapshot {
                     let to_node_id = usize::from(&edge.to_node);
                     let to_node = node_map.get(&to_node_id);
                     if to_node_id != node_id {
-                        let mut to_node = to_node.unwrap().borrow_mut();
-                        to_node.parent_node.push(node_id);
+                        if to_node.is_some() {
+                            let mut to_node = to_node.unwrap().borrow_mut();
+                            to_node.parent_node.push(node_id);
+                        }
                     }
 
                     edge_index += 1;
@@ -117,7 +119,7 @@ pub mod snapshot {
         let edge_property_val: JsValueType = match edge_property_type {
             EdgePropertyType::Str(property_type) => {
                 if property_type == "string" || property_type == "string_or_number" {
-                    if edge_val > snapshot.strings.len() {
+                    if edge_val >= snapshot.strings.len() {
                         JsValueType::JsString("".to_string())
                     } else {
                         JsValueType::JsString(snapshot.strings[edge_val].to_string())
@@ -153,7 +155,11 @@ pub mod snapshot {
         let node_property_val: JsValueType = match node_property_type {
             NodePropertyType::Str(property_type) => {
                 if property_type == "string" {
-                    JsValueType::JsString(snapshot.strings[node_val].to_string())
+                    if node_val >= snapshot.strings.len() {
+                        JsValueType::JsString("".to_string())
+                    } else {
+                        JsValueType::JsString(snapshot.strings[node_val].to_string())
+                    }
                 } else if property_type == "number" {
                     JsValueType::JsNumber(node_val)
                 } else {
@@ -161,7 +167,11 @@ pub mod snapshot {
                 }
             }
             NodePropertyType::Arr(property_type_arr) => {
-                JsValueType::JsString(property_type_arr[node_val].to_string())
+                if node_val >= property_type_arr.len() {
+                    JsValueType::JsString("".to_string())
+                } else {
+                    JsValueType::JsString(property_type_arr[node_val].to_string())
+                }
             }
         };
         node_property_val
