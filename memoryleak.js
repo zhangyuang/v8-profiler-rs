@@ -25,12 +25,12 @@ const fs = require('fs')
 //   }
 // }, 20)
 
-function Student() {
-  this.name = 'lll';
-}
+// function Student() {
+//   this.name = 'lll';
+// }
 
-var a = new Student();
+// var a = new Student();
 
-var b = new String("ccccc");
+// var b = new String("ccccc");
 const stream = require('v8').getHeapSnapshot()
 stream.pipe(fs.createWriteStream('v8.heapsnapshot'))

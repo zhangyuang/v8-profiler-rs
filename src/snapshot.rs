@@ -47,63 +47,58 @@ pub mod snapshot {
                     let to_node_id = usize::from(&edge.to_node);
                     let to_node = node_map.get(&to_node_id);
                     if to_node_id != node_id {
-                        to_node.unwrap().borrow_mut().parent_node.push(node_id);
+                        let mut to_node = to_node.unwrap().borrow_mut();
+                        to_node.parent_node.push(node_id);
                     }
 
                     edge_index += 1;
                     edge
                 })
                 .collect();
+
             node.edges = edges;
         });
+        let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
         node_struct_arr.iter().for_each(|node| {
             let node = node.borrow();
-            let retained_size = Some(calculate_retained_size(usize::from(&node.id), &node_map));
-            // println!("{:?}{:?}", node.id, retained_size)
+            let node_id = usize::from(&node.id);
+            has_marked_map.insert(node_id, false); // 默认所有节点不可抵达
         });
+        mark_sweep(3, 47783, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
+        let mut foo = 0;
+        for (key, val) in has_marked_map {
+            if val == false {
+                let node = node_map.get(&key).unwrap().borrow();
+
+                foo += usize::from(&node.self_size);
+            }
+        }
         node_struct_arr
     }
-    use std::collections::VecDeque;
 
-    fn calculate_retained_size(node_id: usize, node_map: &HashMap<usize, RcNode>) -> usize {
-        let mut queue = VecDeque::new();
-        queue.push_back(node_id);
-        let mut retained_size = 0;
-        let mut has_free: HashMap<usize, bool> = HashMap::new();
-        let mut is_root = true;
-        while queue.len() != 0 {
-            let edge_node_id = queue.pop_front().unwrap();
-            let mut can_free = true;
-            if !is_root {
-                let parent = &node_map.get(&edge_node_id).unwrap().borrow().parent_node;
-                for parent_id in parent {
-                    if has_free.get(parent_id).is_none()
-                    {
-                        // 如果当前节点的父节点没有全部被释放，则当前节点也不能被释放
-                        can_free = false;
-                        break;
-                    }
-                }
-            } else {
-                is_root = false
-            }
-            let edge_node = node_map.get(&edge_node_id).unwrap().borrow();
-            if can_free {
-                // 说明当前节点能够被释放
-                has_free.insert(edge_node_id, true);
-                retained_size += usize::from(&edge_node.self_size);
-            } else {
-                continue;
-            }
-
-            edge_node.edges.iter().for_each(|edge| {
-                let to_node = node_map.get(&usize::from(&edge.to_node)).unwrap();
-                if usize::from(&to_node.borrow().id) != edge_node_id {
-                    queue.push_back(usize::from(&to_node.borrow().id))
-                }
-            });
+    fn mark_sweep(
+        root_id: usize,
+        free_node_id: usize,
+        node_map: &HashMap<usize, RcNode>,
+        has_marked_map: &mut HashMap<usize, bool>,
+    ) {
+        let root = node_map.get(&root_id).unwrap().borrow();
+        let root_id = usize::from(&root.id);
+        if root_id == free_node_id {
+            // 当前节点被释放了,则不可访问
+            return;
         }
-        retained_size
+        if let Some(&node) = has_marked_map.get(&root_id) {
+            // 当前节点已经被访问过了
+            if node {
+                return;
+            }
+        }
+        has_marked_map.insert(root_id, true);
+        root.edges.iter().for_each(|edge| {
+            let to_node_id = usize::from(&edge.to_node);
+            mark_sweep(to_node_id, free_node_id, node_map, has_marked_map);
+        });
     }
 
     fn read_to_snapshot(path: &str) -> Heapsnapshot {

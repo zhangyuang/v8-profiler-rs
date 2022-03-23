@@ -32,6 +32,20 @@ js parse time 225ms
 napi parse time 108ms
 ```
 
+## 开发进度
+
+记录已完成和待开发 features
+
+### 已完成
+
+* [x] 根据 `snapshot` 解析出标准化的 `Node` 节点以及结点 `Edges` 边之间的关系
+
+### 开发中
+
+* [ ] 计算每个节点的 `retained_size`
+
+* [ ] 前端可视化展示节点气泡图，根据气泡图定位节点依赖
+
 ## Node Struct
 
 通过源文件解析出节点与边之间的关联关系
