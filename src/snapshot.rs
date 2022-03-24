@@ -64,15 +64,16 @@ pub mod snapshot {
             let node_id = usize::from(&node.id);
             has_marked_map.insert(node_id, false); // 默认所有节点不可抵达
         });
-        mark_sweep(3, 47783, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
-        let mut foo = 0;
+        mark_sweep(1, 3, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
+        let mut retained_size = 0;
         for (key, val) in has_marked_map {
             if val == false {
                 let node = node_map.get(&key).unwrap().borrow();
-
-                foo += usize::from(&node.self_size);
+                retained_size += usize::from(&node.self_size);
+            } else {
             }
         }
+        println!("{:?}", retained_size);
         node_struct_arr
     }
 
