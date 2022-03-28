@@ -98,8 +98,8 @@ pub mod define {
     #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct Edge {
         pub edge_type: JsValueType,
-        pub name_or_index: JsValueType,
         pub to_node: JsValueType,
+        pub name_or_index: JsValueType,
     }
     pub enum NodePropertyType {
         Arr([&'static str; 14]),

@@ -61,22 +61,34 @@ pub mod snapshot {
             node.edges = edges;
         });
         let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
-        node_struct_arr.iter().for_each(|node| {
-            let node = node.borrow();
-            let node_id = usize::from(&node.id);
-            has_marked_map.insert(node_id, false); // 默认所有节点不可抵达
-        });
-        mark_sweep(1, 3, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
+        get_child(3, &node_map, &mut has_marked_map);
+        mark_sweep(3, 271, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
         for (key, val) in has_marked_map {
             if val == false {
                 let node = node_map.get(&key).unwrap().borrow();
                 retained_size += usize::from(&node.self_size);
-            } else {
             }
         }
         println!("{:?}", retained_size);
         node_struct_arr
+    }
+
+    fn get_child(
+        root_id: usize,
+        node_map: &HashMap<usize, RcNode>,
+        has_marked_map: &mut HashMap<usize, bool>,
+    ) {
+        let root = node_map.get(&root_id).unwrap().borrow();
+        let root_id = usize::from(&root.id);
+        if has_marked_map.get(&root_id).is_some() {
+            return;
+        }
+        has_marked_map.insert(root_id, false);
+        root.edges.iter().for_each(|edge| {
+            let to_node_id = usize::from(&edge.to_node);
+            get_child(to_node_id, node_map, has_marked_map);
+        });
     }
 
     fn mark_sweep(
@@ -85,19 +97,18 @@ pub mod snapshot {
         node_map: &HashMap<usize, RcNode>,
         has_marked_map: &mut HashMap<usize, bool>,
     ) {
-        let root = node_map.get(&root_id).unwrap().borrow();
-        let root_id = usize::from(&root.id);
         if root_id == free_node_id {
             // 当前节点被释放了,则不可访问
             return;
         }
-        if let Some(&node) = has_marked_map.get(&root_id) {
+
+        if has_marked_map.get(&root_id).unwrap() == &true {
             // 当前节点已经被访问过了
-            if node {
-                return;
-            }
+            return;
         }
         has_marked_map.insert(root_id, true);
+        let root = node_map.get(&root_id).unwrap().borrow();
+
         root.edges.iter().for_each(|edge| {
             let to_node_id = usize::from(&edge.to_node);
             mark_sweep(to_node_id, free_node_id, node_map, has_marked_map);
