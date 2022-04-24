@@ -4,10 +4,12 @@ pub mod snapshot {
         JsValueType, Node, NodeFields, NodeOthersProperty, NodePropertyType, NodeTypesProperty,
         RcNode,
     };
+    use itertools::Itertools;
     use std::cell::RefCell;
     use std::collections::HashMap;
     use std::fs::read_to_string;
     use std::rc::Rc;
+
     pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
         let mut node_map = HashMap::new();
         let snapshot = read_to_snapshot(path);
@@ -26,6 +28,7 @@ pub mod snapshot {
                     edges: vec![],
                     retained_size: None,
                     parent_node: vec![],
+                    all_parent_node: vec![],
                 }));
                 node_map.insert(usize::from(&node.borrow_mut().id), Rc::clone(&node));
                 Rc::clone(&node)
@@ -50,6 +53,12 @@ pub mod snapshot {
                         if to_node.is_some() {
                             let mut to_node = to_node.unwrap().borrow_mut();
                             to_node.parent_node.push(node_id);
+                            to_node.all_parent_node = to_node.parent_node.clone();
+                            to_node.all_parent_node =
+                                [to_node.all_parent_node.clone(), node.parent_node.clone()].concat()
+                            // .into_iter()
+                            // .unique()
+                            // .collect()
                         }
                     }
 
@@ -61,12 +70,13 @@ pub mod snapshot {
             node.edges = edges;
         });
         let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
-        get_child(3, &node_map, &mut has_marked_map);
-        mark_sweep(3, 271, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
+        get_child(3, &node_map, &mut has_marked_map); // 将一个节点的字节点插入到 has_marked_map 中，初始值为 false
+        mark_sweep(3, 9359, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
-        for (key, val) in has_marked_map {
+        for (node_id, val) in has_marked_map {
             if val == false {
-                let node = node_map.get(&key).unwrap().borrow();
+                // println!("{:?}", node_id);
+                let node = node_map.get(&node_id).unwrap().borrow();
                 retained_size += usize::from(&node.self_size);
             }
         }
@@ -106,8 +116,31 @@ pub mod snapshot {
             // 当前节点已经被访问过了
             return;
         }
-        has_marked_map.insert(root_id, true);
         let root = node_map.get(&root_id).unwrap().borrow();
+
+        if root
+            .all_parent_node
+            .iter()
+            .find(|&&x| x == free_node_id)
+            .is_some()
+        {
+            let mut can_free = true;
+            let node = node_map.get(&root_id).unwrap().borrow();
+            let parent = &node.parent_node;
+            // 如果一个节点是被释放节点的子节点
+            // 如果一个节点存在不是 roots 类型的父节点 并且该节点不是 free 节点，则该节点不能被释放
+            for node in parent {
+                let parent_node = node_map.get(&node).unwrap().borrow();
+                if !String::from(&parent_node.name).contains("roots)") && node != &free_node_id {
+                    can_free = false;
+                    break;
+                }
+            }
+            if can_free {
+                return;
+            }
+        }
+        has_marked_map.insert(root_id, true); // 代表该节点可以被释放
 
         root.edges.iter().for_each(|edge| {
             let to_node_id = usize::from(&edge.to_node);
