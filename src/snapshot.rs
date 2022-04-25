@@ -70,8 +70,19 @@ pub mod snapshot {
             node.edges = edges;
         });
         let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
+        // for node in node_struct_arr.clone() {
+        //     if node
+        //         .borrow()
+        //         .parent_node
+        //         .iter()
+        //         .find(|&&x| x == 9359)
+        //         .is_some()
+        //     {
+        //         print!("{:?}", node.borrow().id);
+        //     }
+        // }
         get_child(3, &node_map, &mut has_marked_map); // 将一个节点的字节点插入到 has_marked_map 中，初始值为 false
-        mark_sweep(3, 9359, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
+        mark_sweep(3, 9865, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
         for (node_id, val) in has_marked_map {
             if val == false {
@@ -128,10 +139,12 @@ pub mod snapshot {
             let node = node_map.get(&root_id).unwrap().borrow();
             let parent = &node.parent_node;
             // 如果一个节点是被释放节点的子节点
-            // 如果一个节点存在不是 roots 类型的父节点 并且该节点不是 free 节点，则该节点不能被释放
+            // 如果该节点存在不是 roots 类型的父节点 并且该父节点不是 free 节点，则该节点不能被释放
             for node in parent {
                 let parent_node = node_map.get(&node).unwrap().borrow();
-                if !String::from(&parent_node.name).contains("roots)") && node != &free_node_id {
+                if !String::from(&parent_node.node_type).contains("synthetic")
+                    && node != &free_node_id
+                {
                     can_free = false;
                     break;
                 }
@@ -140,6 +153,7 @@ pub mod snapshot {
                 return;
             }
         }
+
         has_marked_map.insert(root_id, true); // 代表该节点可以被释放
 
         root.edges.iter().for_each(|edge| {
