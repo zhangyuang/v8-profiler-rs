@@ -48,45 +48,37 @@ pub mod snapshot {
                         to_node: get_edgs_property(edge_start, 2, &snapshot),
                     };
                     let to_node_id = usize::from(&edge.to_node);
-                    let to_node = node_map.get(&to_node_id);
-                    if to_node_id != node_id {
-                        if to_node.is_some() {
-                            let mut to_node = to_node.unwrap().borrow_mut();
-                            to_node.parent_node.push(node_id);
-                            to_node.all_parent_node = to_node.parent_node.clone();
-                            to_node.all_parent_node =
-                                [to_node.all_parent_node.clone(), node.parent_node.clone()].concat()
-                            // .into_iter()
-                            // .unique()
-                            // .collect()
-                        }
-                    }
+                    // let to_node = node_map.get(&to_node_id);
+                    // if to_node_id != node_id {
+                    //     // if to_node.is_some() {
+                    //     //     let mut to_node = to_node.unwrap().borrow_mut();
+                    //     //     // if true || String::from(&node.node_type) != String::from("hidden")
+                    //     //     // // && String::from(&node.node_type) != String::from("synthetic")
+                    //     //     // {
+                    //     //     //     to_node.parent_node.push(node_id);
+                    //     //     // }
+                    //     //     // to_node.all_parent_node = to_node.parent_node.clone();
+                    //     //     // to_node.all_parent_node =
+                    //     //     //     [to_node.all_parent_node.clone(), node.parent_node.clone()].concat()
+                    //     //     // .into_iter()
+                    //     //     // .unique()
+                    //     //     // .collect()
+                    //     // }
+                    // }
 
                     edge_index += 1;
                     edge
                 })
                 .collect();
-
             node.edges = edges;
         });
         let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
-        // for node in node_struct_arr.clone() {
-        //     if node
-        //         .borrow()
-        //         .parent_node
-        //         .iter()
-        //         .find(|&&x| x == 9359)
-        //         .is_some()
-        //     {
-        //         print!("{:?}", node.borrow().id);
-        //     }
-        // }
         get_child(3, &node_map, &mut has_marked_map); // 将一个节点的字节点插入到 has_marked_map 中，初始值为 false
-        mark_sweep(3, 9865, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
+        mark_sweep(3, 9359, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
         for (node_id, val) in has_marked_map {
             if val == false {
-                // println!("{:?}", node_id);
+                println!("{:?}", node_id);
                 let node = node_map.get(&node_id).unwrap().borrow();
                 retained_size += usize::from(&node.self_size);
             }
@@ -122,43 +114,19 @@ pub mod snapshot {
             // 当前节点被释放了,则不可访问
             return;
         }
-
         if has_marked_map.get(&root_id).unwrap() == &true {
             // 当前节点已经被访问过了
             return;
         }
         let root = node_map.get(&root_id).unwrap().borrow();
 
-        if root
-            .all_parent_node
-            .iter()
-            .find(|&&x| x == free_node_id)
-            .is_some()
-        {
-            let mut can_free = true;
-            let node = node_map.get(&root_id).unwrap().borrow();
-            let parent = &node.parent_node;
-            // 如果一个节点是被释放节点的子节点
-            // 如果该节点存在不是 roots 类型的父节点 并且该父节点不是 free 节点，则该节点不能被释放
-            for node in parent {
-                let parent_node = node_map.get(&node).unwrap().borrow();
-                if !String::from(&parent_node.node_type).contains("synthetic")
-                    && node != &free_node_id
-                {
-                    can_free = false;
-                    break;
-                }
-            }
-            if can_free {
-                return;
-            }
-        }
-
         has_marked_map.insert(root_id, true); // 代表该节点可以被释放
 
         root.edges.iter().for_each(|edge| {
-            let to_node_id = usize::from(&edge.to_node);
-            mark_sweep(to_node_id, free_node_id, node_map, has_marked_map);
+            if String::from(&edge.edge_type) != String::from("weak") {
+                let to_node_id = usize::from(&edge.to_node);
+                mark_sweep(to_node_id, free_node_id, node_map, has_marked_map);
+            }
         });
     }
 
