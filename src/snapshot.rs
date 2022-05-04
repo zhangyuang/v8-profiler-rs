@@ -4,7 +4,6 @@ pub mod snapshot {
         JsValueType, Node, NodeFields, NodeOthersProperty, NodePropertyType, NodeTypesProperty,
         RcNode,
     };
-    use itertools::Itertools;
     use std::cell::RefCell;
     use std::collections::HashMap;
     use std::fs::read_to_string;
@@ -38,7 +37,6 @@ pub mod snapshot {
         node_struct_arr.iter().for_each(|node| {
             let mut node = node.borrow_mut();
             let edge_count = usize::from(&node.edge_count);
-            let node_id = usize::from(&node.id);
             let edges = (0..edge_count)
                 .map(|_| {
                     let edge_start = edge_index * EdgeFields.len();
@@ -47,24 +45,6 @@ pub mod snapshot {
                         name_or_index: get_edgs_property(edge_start, 1, &snapshot),
                         to_node: get_edgs_property(edge_start, 2, &snapshot),
                     };
-                    let to_node_id = usize::from(&edge.to_node);
-                    // let to_node = node_map.get(&to_node_id);
-                    // if to_node_id != node_id {
-                    //     // if to_node.is_some() {
-                    //     //     let mut to_node = to_node.unwrap().borrow_mut();
-                    //     //     // if true || String::from(&node.node_type) != String::from("hidden")
-                    //     //     // // && String::from(&node.node_type) != String::from("synthetic")
-                    //     //     // {
-                    //     //     //     to_node.parent_node.push(node_id);
-                    //     //     // }
-                    //     //     // to_node.all_parent_node = to_node.parent_node.clone();
-                    //     //     // to_node.all_parent_node =
-                    //     //     //     [to_node.all_parent_node.clone(), node.parent_node.clone()].concat()
-                    //     //     // .into_iter()
-                    //     //     // .unique()
-                    //     //     // .collect()
-                    //     // }
-                    // }
 
                     edge_index += 1;
                     edge
@@ -119,7 +99,6 @@ pub mod snapshot {
             return;
         }
         let root = node_map.get(&root_id).unwrap().borrow();
-
         has_marked_map.insert(root_id, true); // 代表该节点可以被释放
 
         root.edges.iter().for_each(|edge| {
