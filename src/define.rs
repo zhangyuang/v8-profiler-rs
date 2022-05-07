@@ -35,6 +35,7 @@ pub mod define {
         "context", "element", "property", "internal", "hidden", "shortcut", "weak",
     ];
     pub const EdgeOthersProperty: [&str; 2] = ["string_or_number", "node"];
+    pub const forbidden_edge_type: [&str; 1] = ["weak"];
     #[derive(Serialize, Deserialize)]
     pub struct Meta {
         node_fields: [String; 6],
@@ -73,7 +74,7 @@ pub mod define {
         pub trace_node_id: JsValueType,
         pub retained_size: Option<usize>,
         pub parent_node: Vec<usize>,
-        pub all_parent_node: Vec<usize>,
+        pub weak_parent_node: Vec<usize>,
         pub edges: Vec<Edge>,
     }
     pub type RcNode = Rc<RefCell<Node>>;
@@ -101,6 +102,7 @@ pub mod define {
         pub edge_type: JsValueType,
         pub to_node: JsValueType,
         pub name_or_index: JsValueType,
+        pub is_strong_retainer: bool,
     }
     pub enum NodePropertyType {
         Arr([&'static str; 14]),

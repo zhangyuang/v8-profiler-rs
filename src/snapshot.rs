@@ -1,14 +1,19 @@
 pub mod snapshot {
     use crate::define::define::{
-        Edge, EdgeFields, EdgeOthersProperty, EdgePropertyType, EdgeTypesProperty, Heapsnapshot,
-        JsValueType, Node, NodeFields, NodeOthersProperty, NodePropertyType, NodeTypesProperty,
-        RcNode,
+        forbidden_edge_type, Edge, EdgeFields, EdgeOthersProperty, EdgePropertyType,
+        EdgeTypesProperty, Heapsnapshot, JsValueType, Node, NodeFields, NodeOthersProperty,
+        NodePropertyType, NodeTypesProperty, RcNode,
     };
     use std::cell::RefCell;
     use std::collections::HashMap;
     use std::fs::read_to_string;
     use std::rc::Rc;
-
+    pub fn can_access(edge_type: String) -> bool {
+        return forbidden_edge_type
+            .iter()
+            .find(|&&item| item == edge_type.as_str())
+            .is_none();
+    }
     pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
         let mut node_map = HashMap::new();
         let snapshot = read_to_snapshot(path);
@@ -27,7 +32,7 @@ pub mod snapshot {
                     edges: vec![],
                     retained_size: None,
                     parent_node: vec![],
-                    all_parent_node: vec![],
+                    weak_parent_node: vec![],
                 }));
                 node_map.insert(usize::from(&node.borrow_mut().id), Rc::clone(&node));
                 Rc::clone(&node)
@@ -36,16 +41,35 @@ pub mod snapshot {
         let mut edge_index = 0; // 代表当前是第几个 edge
         node_struct_arr.iter().for_each(|node| {
             let mut node = node.borrow_mut();
+            let node_id = usize::from(&node.id);
             let edge_count = usize::from(&node.edge_count);
             let edges = (0..edge_count)
                 .map(|_| {
                     let edge_start = edge_index * EdgeFields.len();
-                    let edge = Edge {
+                    let mut edge = Edge {
                         edge_type: get_edgs_property(edge_start, 0, &snapshot),
                         name_or_index: get_edgs_property(edge_start, 1, &snapshot),
                         to_node: get_edgs_property(edge_start, 2, &snapshot),
+                        is_strong_retainer: true,
                     };
 
+                    if String::from(&edge.edge_type) == String::from("weak")
+                        || String::from(&node.name) == String::from("(Read-only roots)")
+                        || String::from(&node.name) == String::from("(Startup object cache)")
+                        || String::from(&node.name) == String::from("(Internalized strings)")
+                        || String::from(&node.name) == String::from("(External strings)")
+                    {
+                        edge.is_strong_retainer = false
+                    }
+                    let to_node_id = usize::from(&edge.to_node);
+                    let to_node = node_map.get(&to_node_id);
+
+                    if to_node_id != node_id {
+                        if to_node.is_some() {
+                            let mut to_node = to_node.unwrap().borrow_mut();
+                            to_node.parent_node.push(node_id);
+                        }
+                    }
                     edge_index += 1;
                     edge
                 })
@@ -53,13 +77,13 @@ pub mod snapshot {
             node.edges = edges;
         });
         let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
-        get_child(3, &node_map, &mut has_marked_map); // 将一个节点的字节点插入到 has_marked_map 中，初始值为 false
-        mark_sweep(3, 9359, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
+        get_child(3, &node_map, &mut has_marked_map); // 将一个节点的子节点插入到 has_marked_map 中，初始值为 false 代表还没到达
+        mark_sweep(3, 37477, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
         for (node_id, val) in has_marked_map {
             if val == false {
-                println!("{:?}", node_id);
                 let node = node_map.get(&node_id).unwrap().borrow();
+                println!("freeId: {:?} size: {:?}", node_id, &node.self_size);
                 retained_size += usize::from(&node.self_size);
             }
         }
@@ -79,8 +103,10 @@ pub mod snapshot {
         }
         has_marked_map.insert(root_id, false);
         root.edges.iter().for_each(|edge| {
-            let to_node_id = usize::from(&edge.to_node);
-            get_child(to_node_id, node_map, has_marked_map);
+            if edge.is_strong_retainer {
+                let to_node_id = usize::from(&edge.to_node);
+                get_child(to_node_id, node_map, has_marked_map);
+            }
         });
     }
 
@@ -99,10 +125,11 @@ pub mod snapshot {
             return;
         }
         let root = node_map.get(&root_id).unwrap().borrow();
-        has_marked_map.insert(root_id, true); // 代表该节点可以被释放
+
+        has_marked_map.insert(root_id, true); // 代表该节点可以被访问
 
         root.edges.iter().for_each(|edge| {
-            if String::from(&edge.edge_type) != String::from("weak") {
+            if edge.is_strong_retainer {
                 let to_node_id = usize::from(&edge.to_node);
                 mark_sweep(to_node_id, free_node_id, node_map, has_marked_map);
             }
