@@ -78,7 +78,7 @@ pub mod snapshot {
         });
         let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
         get_child(3, &node_map, &mut has_marked_map); // 将一个节点的子节点插入到 has_marked_map 中，初始值为 false 代表还没到达
-        mark_sweep(3, 37477, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
+        mark_sweep(3, 37473, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
         for (node_id, val) in has_marked_map {
             if val == false {
