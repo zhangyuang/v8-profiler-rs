@@ -7527,22 +7527,40 @@ const HeapSnapshotLoader = (function (exports) {
       const list = [];
 
       for (let iter = this.rootNode().edges(); iter.hasNext(); iter.next()) {
-        console.log(iter)
+        // iter.edge.node().nodeIndex 代表 每个 edge 的第三个下标，即 to_node 这一条 property
         if (iter.edge.node().isUserRoot()) {
-          list.push(iter.edge.node().nodeIndex / nodeFieldCount);
+          // 找到第一个用户根节点，即 nodeType !== synthetic 的节点
+          // 在这里是
+          // {
+          //   "edge_type": "shortcut",
+          //   "to_node": 4445,
+          //   "name_or_index": "2"
+          // },
+          // "node_type": "object",
+          // "name": "global",
+          // "id": 4445,
+          list.push(iter.edge.node().nodeIndex / nodeFieldCount); // 找到它属于nodes数组的第几个节点，在这里是第2222个
         }
       }
+
       while (list.length) {
         const nodeOrdinal = list.pop();
+        // 当两个数字都为1时，continue
+        // flag 意思是 canBeQuaried, 默认值是1
         if (flags[nodeOrdinal] & flag) {
           continue;
         }
         flags[nodeOrdinal] |= flag;
+        // id 4445 节点 的 edge 的在 edges里面的开始下标
         const beginEdgeIndex = firstEdgeIndexes[nodeOrdinal];
         const endEdgeIndex = firstEdgeIndexes[nodeOrdinal + 1];
+        // id 4445 下一个节点 的 edge 的在 edges里面的开始下标
+        // 在这里等于 endEdgeIndex - beginEdgeIndex = 258 = edge_count 86 * 3
         for (let edgeIndex = beginEdgeIndex; edgeIndex < endEdgeIndex; edgeIndex += edgeFieldsCount) {
+          // 遍历每一条 edge
           const childNodeIndex = containmentEdges[edgeIndex + edgeToNodeOffset];
           const childNodeOrdinal = childNodeIndex / nodeFieldCount;
+          // 如果该节点已经访问过
           if (flags[childNodeOrdinal] & flag) {
             continue;
           }
@@ -7569,14 +7587,14 @@ const HeapSnapshotLoader = (function (exports) {
       const nodesCount = this.nodeCount;
 
       const flags = this._flags;
-      const pageObjectFlag = this._nodeFlags.pageObject;
+      const pageObjectFlag = this._nodeFlags.pageObject; // 4
 
       const nodesToVisit = new Uint32Array(nodesCount);
       let nodesToVisitLength = 0;
 
       const rootNodeOrdinal = this._rootNodeIndex / nodeFieldCount;
       const node = this.rootNode();
-
+      // debugger
       // Populate the entry points. They are Window objects and DOM Tree Roots.
       for (let edgeIndex = firstEdgeIndexes[rootNodeOrdinal], endEdgeIndex = firstEdgeIndexes[rootNodeOrdinal + 1];
         edgeIndex < endEdgeIndex; edgeIndex += edgeFieldsCount) {
@@ -7590,9 +7608,18 @@ const HeapSnapshotLoader = (function (exports) {
         } else if (edgeType !== edgeShortcutType) {
           continue;
         }
+        // 第 2222 个节点，即 
+        // {
+        //   "edge_type": "shortcut",
+        //   "to_node": 4445,
+        //   "name_or_index": "2"
+        // },
         const nodeOrdinal = nodeIndex / nodeFieldCount;
         nodesToVisit[nodesToVisitLength++] = nodeOrdinal;
-        flags[nodeOrdinal] |= pageObjectFlag;
+        console.log(flags[nodeOrdinal], pageObjectFlag)
+
+        flags[nodeOrdinal] |= pageObjectFlag; // 0001 | 0100 = 0101 = 5 
+        // flags[nodeOrdinal]  即 global object 为 5
       }
 
       // Mark everything reachable with the pageObject flag.
