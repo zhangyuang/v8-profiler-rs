@@ -8,12 +8,7 @@ pub mod snapshot {
     use std::collections::HashMap;
     use std::fs::read_to_string;
     use std::rc::Rc;
-    pub fn can_access(edge_type: String) -> bool {
-        return forbidden_edge_type
-            .iter()
-            .find(|&&item| item == edge_type.as_str())
-            .is_none();
-    }
+
     pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
         let mut node_map = HashMap::new();
         let snapshot = read_to_snapshot(path);
@@ -46,19 +41,13 @@ pub mod snapshot {
             let edges = (0..edge_count)
                 .map(|_| {
                     let edge_start = edge_index * EdgeFields.len();
-                    let mut edge = Edge {
+                    let edge = Edge {
                         edge_type: get_edgs_property(edge_start, 0, &snapshot),
                         name_or_index: get_edgs_property(edge_start, 1, &snapshot),
                         to_node: get_edgs_property(edge_start, 2, &snapshot),
                         is_strong_retainer: true,
                     };
 
-                    if String::from(&edge.edge_type) == String::from("weak")
-                        || String::from(&edge.edge_type) == String::from("synthetic")
-                    
-                    {
-                        edge.is_strong_retainer = false
-                    }
                     let to_node_id = usize::from(&edge.to_node);
                     let to_node = node_map.get(&to_node_id);
 
@@ -74,7 +63,10 @@ pub mod snapshot {
                 .collect();
             node.edges = edges;
         });
+        let mut flag_marked_map: HashMap<usize, bool> = HashMap::new();
         let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
+        let mut flags = vec![0; node_struct_arr.len()];
+        set_flag(4445, &node_map, &mut flag_marked_map, &mut flags);
         get_child(3, &node_map, &mut has_marked_map); // 将一个节点的子节点插入到 has_marked_map 中，初始值为 false 代表还没到达
         mark_sweep(3, 23357, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
@@ -89,6 +81,31 @@ pub mod snapshot {
         node_struct_arr
     }
 
+    fn set_flag(
+        root_id: usize,
+        node_map: &HashMap<usize, RcNode>,
+        has_marked_map: &mut HashMap<usize, bool>,
+        flags: &mut Vec<usize>,
+    ) {
+        let mut root = node_map.get(&root_id).unwrap().borrow_mut();
+        let root_id = usize::from(&root.id);
+        if has_marked_map.get(&root_id).is_some() {
+            return;
+        }
+        has_marked_map.insert(root_id, true);
+        flags[root_id] = 1;
+        root.edges.iter_mut().for_each(|edge| {
+            let edge_type = String::from(&edge.edge_type);
+            if forbidden_edge_type
+                .iter()
+                .find(|&&x| x == edge_type.as_str())
+                .is_none()
+            {
+                let to_node_id = usize::from(&edge.to_node);
+                set_flag(to_node_id, node_map, has_marked_map, flags);
+            }
+        });
+    }
     fn get_child(
         root_id: usize,
         node_map: &HashMap<usize, RcNode>,

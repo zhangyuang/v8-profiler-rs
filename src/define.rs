@@ -35,7 +35,7 @@ pub mod define {
         "context", "element", "property", "internal", "hidden", "shortcut", "weak",
     ];
     pub const EdgeOthersProperty: [&str; 2] = ["string_or_number", "node"];
-    pub const forbidden_edge_type: [&str; 1] = ["weak"];
+    pub const forbidden_edge_type: [&str; 4] = ["weak", "internal", "invisible", "hidden"];
     #[derive(Serialize, Deserialize)]
     pub struct Meta {
         node_fields: [String; 6],

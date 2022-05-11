@@ -6411,7 +6411,6 @@ const HeapSnapshotLoader = (function (exports) {
       const mapAndFlag = this.userObjectsMapAndFlag();
       const flags = mapAndFlag ? mapAndFlag.map : null;
       const flag = mapAndFlag ? mapAndFlag.flag : 0;
-
       const stackNodes = new Uint32Array(nodeCount);
       const stackCurrentEdge = new Uint32Array(nodeCount);
       const postOrderIndex2NodeOrdinal = new Uint32Array(nodeCount);
@@ -6423,7 +6422,9 @@ const HeapSnapshotLoader = (function (exports) {
       stackNodes[0] = rootNodeOrdinal;
       stackCurrentEdge[0] = firstEdgeIndexes[rootNodeOrdinal];
       visited[rootNodeOrdinal] = 1;
-
+      // userObjectsMapAndFlag() {
+      //   return { map: this._flags, flag: this._nodeFlags.pageObject };
+      // }
       let iteration = 0;
       while (true) {
         ++iteration;
@@ -7621,7 +7622,6 @@ const HeapSnapshotLoader = (function (exports) {
         flags[nodeOrdinal] |= pageObjectFlag; // 0001 | 0100 = 0101 = 5 
         // flags[nodeOrdinal]  即 global object 为 5
       }
-
       // Mark everything reachable with the pageObject flag.
       while (nodesToVisitLength) {
         const nodeOrdinal = nodesToVisit[--nodesToVisitLength];
@@ -7630,6 +7630,7 @@ const HeapSnapshotLoader = (function (exports) {
         for (let edgeIndex = beginEdgeIndex; edgeIndex < endEdgeIndex; edgeIndex += edgeFieldsCount) {
           const childNodeIndex = containmentEdges[edgeIndex + edgeToNodeOffset];
           const childNodeOrdinal = childNodeIndex / nodeFieldCount;
+          // 从 global 对象开始，遍历 edge 指向的 node节点
           if (flags[childNodeOrdinal] & pageObjectFlag) {
             continue;
           }
@@ -7638,7 +7639,7 @@ const HeapSnapshotLoader = (function (exports) {
             continue;
           }
           nodesToVisit[nodesToVisitLength++] = childNodeOrdinal;
-          flags[childNodeOrdinal] |= pageObjectFlag;
+          flags[childNodeOrdinal] |= pageObjectFlag; // 0|4 = 4, 1|4 = 5 
         }
       }
     }
