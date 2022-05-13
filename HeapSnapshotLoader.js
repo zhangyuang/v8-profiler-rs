@@ -7617,7 +7617,6 @@ const HeapSnapshotLoader = (function (exports) {
         // },
         const nodeOrdinal = nodeIndex / nodeFieldCount;
         nodesToVisit[nodesToVisitLength++] = nodeOrdinal;
-        console.log(flags[nodeOrdinal], pageObjectFlag)
 
         flags[nodeOrdinal] |= pageObjectFlag; // 0001 | 0100 = 0101 = 5 
         // flags[nodeOrdinal]  即 global object 为 5
@@ -7642,6 +7641,7 @@ const HeapSnapshotLoader = (function (exports) {
           flags[childNodeOrdinal] |= pageObjectFlag; // 0|4 = 4, 1|4 = 5 
         }
       }
+      // flags 0 代表 weak 无法访问 4 代表本来是 weak/interal/hidden 现在是 非 weak，5 原来是1
     }
 
     /**
