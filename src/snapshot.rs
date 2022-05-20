@@ -46,16 +46,13 @@ pub mod snapshot {
             let edges = (0..edge_count)
                 .map(|_| {
                     let edge_start = edge_index * EdgeFields.len();
-                    let mut edge = Edge {
+                    let edge = Edge {
                         edge_type: get_edgs_property(edge_start, 0, &snapshot),
                         name_or_index: get_edgs_property(edge_start, 1, &snapshot),
                         to_node: get_edgs_property(edge_start, 2, &snapshot),
                         is_strong_retainer: true,
                     };
 
-                    if String::from(&edge.edge_type) == String::from("weak") {
-                        edge.is_strong_retainer = false
-                    }
                     let to_node_id = usize::from(&edge.to_node);
                     let to_node = node_map.get(&to_node_id);
 
@@ -72,6 +69,7 @@ pub mod snapshot {
             node.edges = edges;
         });
         let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
+        traverse(4443, &node_map, &mut HashMap::new());
         get_child(3, &node_map, &mut has_marked_map); // 将一个节点的子节点插入到 has_marked_map 中，初始值为 false 代表还没到达
         mark_sweep(3, 22779, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
@@ -86,6 +84,31 @@ pub mod snapshot {
         node_struct_arr
     }
 
+    fn traverse(
+        root_id: usize,
+        node_map: &HashMap<usize, RcNode>,
+        has_marked_map: &mut HashMap<usize, bool>,
+    ) {
+        if has_marked_map.get(&root_id).is_some() {
+            return;
+        }
+        let mut root = node_map.get(&root_id).unwrap().borrow_mut();
+        let root_id = usize::from(&root.id);
+        has_marked_map.insert(root_id, false);
+        root.edges.iter_mut().for_each(|edge| {
+            if String::from(&edge.edge_type) == String::from("weak")
+            // || (String::from(&edge.edge_type) == String::from("shortcut"))
+            // || (String::from(&edge.edge_type) == String::from("hidden"))
+            // || (String::from(&edge.edge_type) == String::from("invisible"))
+            // || (String::from(&edge.edge_type) == String::from("internal"))
+            {
+                edge.is_strong_retainer = false
+            }
+
+            let to_node_id = usize::from(&edge.to_node);
+            traverse(to_node_id, node_map, has_marked_map);
+        });
+    }
     fn get_child(
         root_id: usize,
         node_map: &HashMap<usize, RcNode>,

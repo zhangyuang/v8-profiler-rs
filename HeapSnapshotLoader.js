@@ -6409,8 +6409,8 @@ const HeapSnapshotLoader = (function (exports) {
       const containmentEdges = this.containmentEdges;
 
       const mapAndFlag = this.userObjectsMapAndFlag();
-      const flags = mapAndFlag ? mapAndFlag.map : null;
-      const flag = mapAndFlag ? mapAndFlag.flag : 0;
+      const flags = mapAndFlag ? mapAndFlag.map : null; // this.flages
+      const flag = mapAndFlag ? mapAndFlag.flag : 0; // this._nodeFlags.pageObject = 4
       const stackNodes = new Uint32Array(nodeCount);
       const stackCurrentEdge = new Uint32Array(nodeCount);
       const postOrderIndex2NodeOrdinal = new Uint32Array(nodeCount);
@@ -6421,11 +6421,10 @@ const HeapSnapshotLoader = (function (exports) {
       let stackTop = 0;
       stackNodes[0] = rootNodeOrdinal;
       stackCurrentEdge[0] = firstEdgeIndexes[rootNodeOrdinal];
-      visited[rootNodeOrdinal] = 1;
-      // userObjectsMapAndFlag() {
-      //   return { map: this._flags, flag: this._nodeFlags.pageObject };
-      // }
+      visited[rootNodeOrdinal] = 1; // 从 根结点开始
       let iteration = 0;
+          // weak 保留0, internal hidden visible 转为4, 其余类型转为 5
+
       while (true) {
         ++iteration;
         while (stackTop >= 0) {
@@ -6437,6 +6436,7 @@ const HeapSnapshotLoader = (function (exports) {
             stackCurrentEdge[stackTop] += edgeFieldsCount;
             const edgeType = containmentEdges[edgeIndex + edgeTypeOffset];
             if (!this._isEssentialEdge(nodeOrdinal * nodeFieldCount, edgeType)) {
+              // 如果 是weak节点，或者是非根节点的 shotcut 属性 edge 则 continue
               continue;
             }
             const childNodeIndex = containmentEdges[edgeIndex + edgeToNodeOffset];
@@ -6446,6 +6446,7 @@ const HeapSnapshotLoader = (function (exports) {
             }
             const nodeFlag = !flags || (flags[nodeOrdinal] & flag);
             const childNodeFlag = !flags || (flags[childNodeOrdinal] & flag);
+            // 跳过从无法访问的节点到可以访问的节点这种情况的 edge
             // We are skipping the edges from non-page-owned nodes to page-owned nodes.
             // Otherwise the dominators for the objects that also were retained by debugger would be affected.
             if (nodeOrdinal !== rootNodeOrdinal && childNodeFlag && !nodeFlag) {
@@ -7630,14 +7631,18 @@ const HeapSnapshotLoader = (function (exports) {
           const childNodeIndex = containmentEdges[edgeIndex + edgeToNodeOffset];
           const childNodeOrdinal = childNodeIndex / nodeFieldCount;
           // 从 global 对象开始，遍历 edge 指向的 node节点
+          // 0 & 4 = 0，1 & 4 = 0
+          // 意思是如果 flags[childNodeOrdinal] 为0或者1就继续往下面走
           if (flags[childNodeOrdinal] & pageObjectFlag) {
             continue;
           }
           const type = containmentEdges[edgeIndex + edgeTypeOffset];
           if (type === edgeWeakType) {
+            // weak 保留0, internal hidden visible 转为4, 其余类型转为 5
             continue;
           }
           nodesToVisit[nodesToVisitLength++] = childNodeOrdinal;
+
           flags[childNodeOrdinal] |= pageObjectFlag; // 0|4 = 4, 1|4 = 5 
         }
       }
