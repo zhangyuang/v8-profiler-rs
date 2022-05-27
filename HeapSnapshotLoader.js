@@ -6423,8 +6423,10 @@ const HeapSnapshotLoader = (function (exports) {
       stackCurrentEdge[0] = firstEdgeIndexes[rootNodeOrdinal];
       visited[rootNodeOrdinal] = 1; // 从 根结点开始
       let iteration = 0;
-      // weak 保留0, internal hidden visible 转为4, 其余类型转为 5
+      // 只有 weak 类型的 edge 保留 0, 只有 internal hidden visible 转为4, 其余类型转为 5
+      // 通过 global object 无法到达的节点也是 0
       // original 下标对应 snapshot.json 节点的关系是直接取 require('./snapshot.json')[original]
+      console.log(flags)
       while (true) {
         ++iteration;
         while (stackTop >= 0) {
@@ -6445,6 +6447,9 @@ const HeapSnapshotLoader = (function (exports) {
               continue;
             }
             const nodeFlag = !flags || (flags[nodeOrdinal] & flag);
+            // if (flags[nodeOrdinal] === 5) {
+            //   console.log(nodeOrdinal)
+            // }
             const childNodeFlag = !flags || (flags[childNodeOrdinal] & flag);
             // 如果一个节点自身无法被访问但子节点可访问，则跳过
             // We are skipping the edges from non-page-owned nodes to page-owned nodes.

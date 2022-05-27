@@ -50,7 +50,7 @@ pub mod snapshot {
                         edge_type: get_edgs_property(edge_start, 0, &snapshot),
                         name_or_index: get_edgs_property(edge_start, 1, &snapshot),
                         to_node: get_edgs_property(edge_start, 2, &snapshot),
-                        is_strong_retainer: true,
+                        is_strong_retainer: false,
                     };
 
                     let to_node_id = usize::from(&edge.to_node);
@@ -70,8 +70,8 @@ pub mod snapshot {
         });
         let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
         traverse(4443, &node_map, &mut HashMap::new());
-        get_child(3, &node_map, &mut has_marked_map); // 将一个节点的子节点插入到 has_marked_map 中，初始值为 false 代表还没到达
-        mark_sweep(3, 22779, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
+        get_child(4443, &node_map, &mut has_marked_map); // 将一个节点的子节点插入到 has_marked_map 中，初始值为 false 代表还没到达
+        mark_sweep(4443, 4469, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
         for (node_id, val) in has_marked_map {
             if val == false {
@@ -96,13 +96,10 @@ pub mod snapshot {
         let root_id = usize::from(&root.id);
         has_marked_map.insert(root_id, false);
         root.edges.iter_mut().for_each(|edge| {
-            if String::from(&edge.edge_type) == String::from("weak")
-            // || (String::from(&edge.edge_type) == String::from("shortcut"))
-            // || (String::from(&edge.edge_type) == String::from("hidden"))
-            // || (String::from(&edge.edge_type) == String::from("invisible"))
-            // || (String::from(&edge.edge_type) == String::from("internal"))
+            if String::from(&edge.edge_type) != String::from("weak")
+            && String::from(&edge.edge_type) != String::from("shortcut")
             {
-                edge.is_strong_retainer = false
+                edge.is_strong_retainer = true
             }
 
             let to_node_id = usize::from(&edge.to_node);
