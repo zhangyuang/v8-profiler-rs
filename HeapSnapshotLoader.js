@@ -7636,7 +7636,7 @@ const HeapSnapshotLoader = (function (exports) {
           const childNodeOrdinal = childNodeIndex / nodeFieldCount;
           // 从 global 对象开始，遍历 edge 指向的 node节点
           // 0 & 4 = 0，1 & 4 = 0
-          // 意思是如果 flags[childNodeOrdinal] 为0或者1就继续往下面走
+          // 意思是如果 flags[childNodeOrdinal] 为0或者1也就是还没有被处理就继续往下面走
           if (flags[childNodeOrdinal] & pageObjectFlag) {
             continue;
           }
@@ -7646,7 +7646,6 @@ const HeapSnapshotLoader = (function (exports) {
             continue;
           }
           nodesToVisit[nodesToVisitLength++] = childNodeOrdinal;
-
           flags[childNodeOrdinal] |= pageObjectFlag; // 0|4 = 4, 1|4 = 5 
         }
       }

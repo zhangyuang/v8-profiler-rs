@@ -68,8 +68,8 @@ pub mod snapshot {
                 .collect();
             node.edges = edges;
         });
-        let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
         traverse(4443, &node_map, &mut HashMap::new());
+        let mut has_marked_map: HashMap<usize, bool> = HashMap::new();
         get_child(4443, &node_map, &mut has_marked_map); // 将一个节点的子节点插入到 has_marked_map 中，初始值为 false 代表还没到达
         mark_sweep(4443, 4469, &node_map, &mut has_marked_map); // 把当前节点设置为不可到达后，标记从 gc roots 能到达的节点
         let mut retained_size = 0;
@@ -96,13 +96,15 @@ pub mod snapshot {
         let root_id = usize::from(&root.id);
         has_marked_map.insert(root_id, false);
         root.edges.iter_mut().for_each(|edge| {
+            let to_node_id = usize::from(&edge.to_node);
             if String::from(&edge.edge_type) != String::from("weak")
             && String::from(&edge.edge_type) != String::from("shortcut")
+            && String::from(&edge.edge_type) != String::from("invisible")
+            &&  to_node_id != 1
             {
                 edge.is_strong_retainer = true
             }
 
-            let to_node_id = usize::from(&edge.to_node);
             traverse(to_node_id, node_map, has_marked_map);
         });
     }
