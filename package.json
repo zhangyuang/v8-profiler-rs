@@ -11,6 +11,7 @@
     "build:node": "wasm-pack build ./packages/wasm --target nodejs --out-dir ../../pkg-node",
     "build:web": "wasm-pack build ./packages/wasm --target web --out-dir ../../pkg-web",
     "deploy": "cd example && npm run deploy",
+    "deploy:docker": "make build",
     "build:x86": "RUSTFLAGS='-C target-feature=+crt-static -C linker=x86_64-unknown-linux-gnu-gcc' cargo build -p http_server --release --target x86_64-unknown-linux-gnu",
     "deploy:http": "npm run build:x86 && rm -rf .temp && mkdir .temp && cp ./target/x86_64-unknown-linux-gnu/release/http_server ./.temp/bootstrap"
   },

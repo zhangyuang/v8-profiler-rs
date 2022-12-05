@@ -134,7 +134,8 @@ pub mod snapshot {
         let mut edge_index = 0; // 代表当前是第几个 edge
         let mut id_to_ordinal: HashMap<usize, usize> = HashMap::new();
         println!(
-            "calculate node spend {}ms",
+            "calculate node {} spend {}ms",
+            node_struct_arr.len(),
             Local::now().timestamp_millis() - now
         );
         node_struct_arr
