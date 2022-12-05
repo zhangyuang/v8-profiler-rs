@@ -21,7 +21,7 @@ jobs:
           version: 6
       - name: Install dependencies
         run: |
-          pnpm i
+          pnpm i --no-frozen-lockfile
       - name: Use Node.js 16
         uses: actions/setup-node@v3
         with:
@@ -55,7 +55,7 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: |
-          pnpm i
+          pnpm i --no-frozen-lockfile
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -83,7 +83,7 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: |
-          pnpm i
+          pnpm i --no-frozen-lockfile
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable

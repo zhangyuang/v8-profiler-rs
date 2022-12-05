@@ -121,13 +121,13 @@ Cargo.lock
 
 *.node
 *.cpuprofile
-*.json
+snapshot.json
 .DS_Store
 !example/**/*.json
 example/index.js
 example/index.d.ts
 .eslintcache
-
+run
 **/pkg
 
 **/yarn.lock

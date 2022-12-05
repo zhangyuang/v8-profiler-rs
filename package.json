@@ -1,0 +1,27 @@
+{
+  "name": "v8-profiler-rs",
+  "description": "Analyze v8 heapsnapshot By Rust",
+  "version": "1.0.16",
+  "license": "MIT",
+  "scripts": {
+    "dev": "cargo build --release -p debug && ./target/release/debug",
+    "lint:fix": "cargo fmt && cd ./example && npm run lint:fix",
+    "dev:build": "wasm-pack build ./packages/wasm --target bundler --out-dir ../../example/web/pkg",
+    "build:bundler": "wasm-pack build ./packages/wasm --target bundler --out-dir ../../pkg-bundler",
+    "build:node": "wasm-pack build ./packages/wasm --target nodejs --out-dir ../../pkg-node",
+    "build:web": "wasm-pack build ./packages/wasm --target web --out-dir ../../pkg-web",
+    "deploy": "cd example && npm run deploy",
+    "build:x86": "RUSTFLAGS='-C target-feature=+crt-static -C linker=x86_64-unknown-linux-gnu-gcc' cargo build -p http_server --release --target x86_64-unknown-linux-gnu",
+    "deploy:http": "npm run build:x86 && rm -rf .temp && mkdir .temp && cp ./target/x86_64-unknown-linux-gnu/release/http_server ./.temp/bootstrap"
+  },
+  "dependencies": {
+    "@types/semver": "^7.3.13",
+    "@types/shelljs": "^0.8.11",
+    "esno": "^0.16.3",
+    "execa": "^6.1.0",
+    "express": "^4.18.2",
+    "minimist": "^1.2.7",
+    "semver": "^7.3.8",
+    "shelljs": "^0.8.5"
+  }
+}

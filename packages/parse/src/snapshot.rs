@@ -17,7 +17,11 @@ pub mod snapshot {
         let now = Local::now().timestamp_millis();
         let (node_struct_arr, id_to_ordinal, node_map) = parse_snapshot_with_node(path);
         let root_id = 1;
-        let user_root_id = 4445;
+        let root_node = &node_struct_arr[0].borrow().clone();
+        let user_root_id =  root_node.edges.iter().find(|&edge| {
+            String::from(&edge.edge_type) == "shortcut"
+        });
+        let user_root_id = usize::from(&user_root_id.unwrap().to_node);
         let mut flags = vec![0; node_struct_arr.len()];
         flags[get_ordinal(&id_to_ordinal, user_root_id)] = 1;
         let mut edges_retainer: Vec<(u32, u32)> = vec![];
@@ -155,7 +159,7 @@ pub mod snapshot {
                         };
                         let to_node_id = usize::from(&edge.to_node);
                         let to_node = node_map.get(&to_node_id).unwrap();
-                       
+
                         if to_node_id != node_id {
                             to_node.borrow_mut().parents.push(usize::from(&node.id));
                         } else {
