@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "packages/parse",
+    "packages/wasm",
+    "packages/debug",
+    "packages/http"
+]

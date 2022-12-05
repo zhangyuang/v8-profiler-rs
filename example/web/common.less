@@ -1,0 +1,126 @@
+.verticalCenter {
+  position: absolute;
+  top: 50%;
+  transform: translate(0, -50%);
+}
+
+html,body,#app {
+  height: 100%;
+}
+
+.levelCenter {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 0);
+}
+
+.verticalLevelCenter {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.verticalCenterFlex {
+  display: flex;
+  align-items: center;
+}
+
+.levelCenterFlex {
+  display: flex;
+  justify-content: center;
+}
+
+.verticalLevelCenterFlex {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overflowEllipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pName {
+  font-size: 15px;
+  color: #000000;
+  margin-top: 10px;
+  padding-left: 9px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  height: 25px;
+  line-height: 25px;
+  z-index: 99;
+}
+
+.pDesc {
+  padding-left: 9px;
+  font-size: 13px;
+  color: #999999;
+  margin-bottom: 20px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  z-index: 99;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: #fff;
+  text-decoration: none;
+}
+
+ul {
+  list-style: none;
+}
+
+.van-loading__text {
+  white-space: nowrap;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+
+  .text {
+    white-space: nowrap;
+    color: rgba(0, 0, 0, .5);
+  }
+
+  img {
+    width: 30px;
+    height: 30px;
+  };
+  align-items: center;
+  .verticalLevelCenter;
+}
+
+.tooltipText {
+  max-width: 800px;
+  white-space: normal;
+
+  .item {
+    display: flex;
+    margin-top: 10px;
+
+    .name {
+      color: #666;
+      white-space: nowrap;
+    }
+
+    .code {
+      color: #666;
+      margin-left: 6px;
+    }
+  }
+}
+
+// @tailwind components;
+// @tailwind utilities;

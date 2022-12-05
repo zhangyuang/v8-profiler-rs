@@ -1,0 +1,14 @@
+[package]
+authors = ["yuuangzhang"]
+edition = "2021"
+name = "rs-parse-snapshot"
+version = "1.0.6"
+
+
+[dependencies]
+lazy_static = "1.4.0"
+chrono = "0.4"
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "*"
+petgraph = "^0.6.2"
+yuuang_petgraph = "^0.6.3"
