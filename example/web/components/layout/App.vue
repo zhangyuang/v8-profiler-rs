@@ -8,7 +8,6 @@
         <!-- <Field class="field" v-model="nodeSize" label="节点大小"></Field> -->
         <Field class="field" v-model="nodeName" label="节点名称"></Field>
         <Field class="field" v-model="nodeId" label="节点id"></Field>
-        <Field class="field" v-model="parseMethod" label="解析方式" placeholder="http/wasm"></Field>
         <template v-if=isIndex>
           <Field class="field" v-model="maxNodes" label="节点数量"></Field>
         </template>
@@ -24,6 +23,9 @@
             <Field class="field" v-model="weakOrStrong" label="过滤引用关系"></Field>
           </div> -->
         </template>
+        <DropdownMenu class="field">
+          <DropdownItem class="field" v-model="parseMethod" :options="option" />
+        </DropdownMenu>
         <input type="file" @change="upload" ref="fileRef" accept=".heapsnapshot" class="inputFile">
         <Button type="primary" class="btn" @click="fileRef.click()" v-if="store.loaded !== 'finish'">上传文件</Button>
         <Button type="primary" class="btn" @click="confirm">重新绘制</Button>
@@ -54,7 +56,7 @@
 <script lang="ts" setup>
 import { ref, provide, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Button, Field, Notify, Loading } from 'vant'
+import { Button, Field, Notify, Loading, DropdownMenu, DropdownItem } from 'vant'
 import { onlyCsr } from 'ssr-hoc-vue3'
 import axios from 'axios'
 import type { TooltipComponentOption } from 'echarts'
@@ -84,6 +86,11 @@ const label = reactive({
     return (params.data.name?.length < 20 && params.data.name?.length > 0) ? params.data.name : params.data.id
   }
 })
+const option = [
+  { text: '解析方式', value: 'wasm' },
+  { text: 'wasm', value: 'wasm' },
+  { text: 'http', value: 'http' },
+];
 const defaultDemoStr = __isBrowser__ ? JSON.stringify(require('@/pages/index/closure.json')) : {}
 const toRepo = () => {
   window.open('https://github.com/zhangyuang/v8-profiler-rs')
@@ -128,10 +135,12 @@ const parse = async (e: any) => {
         data: JSON.parse(snapShot)
       })
     } else {
-      // use http request
       const url = process.env.NODE_ENV === 'development' ? 'http://0.0.0.0:3000/parsev8' : `${location.protocol}//v8.ssr-fc.com/parsev8`
       const res = await axios.post(url, {
         source: e.target!.result?.toString()
+      }, {
+        maxContentLength: 100000000,
+        maxBodyLength: 1000000000
       })
       console.log(`Parse Time spend ${Date.now() - start}ms`)
       store.setData({
@@ -292,6 +301,7 @@ provide('filterNative', filterNative)
   }
 
   .field {
+    width: 100%;
     margin-bottom: 20px;
   }
 
