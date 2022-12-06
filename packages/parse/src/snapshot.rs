@@ -1,5 +1,34 @@
 pub mod snapshot {
+    // use wasm_bindgen::prelude::*;
 
+    // // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
+    // // allocator.
+    // #[cfg(feature = "wee_alloc")]
+    // #[global_allocator]
+    // static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+    
+    // #[wasm_bindgen]
+    // extern "C" {
+    //     // Use `js_namespace` here to bind `console.log(..)` instead of just
+    //     // `log(..)`
+    //     #[wasm_bindgen(js_namespace = console)]
+    //     fn log(s: &str);
+    
+    //     // The `console.log` is quite polymorphic, so we can bind it with multiple
+    //     // signatures. Note that we need to use `js_name` to ensure we always call
+    //     // `log` in JS.
+    //     #[wasm_bindgen(js_namespace = console, js_name = log)]
+    //     fn log_u32(a: u32);
+    
+    //     // Multiple arguments too!
+    //     #[wasm_bindgen(js_namespace = console, js_name = log)]
+    //     fn log_many(a: &str, b: &str);
+    // }
+    // macro_rules! console_log {
+    //   // Note that this is using the `log` function imported above during
+    //   // `bare_bones`
+    //   ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+    // }
     use crate::define::define::{
         Edge, EdgePropertyType, Heapsnapshot, JsValueType, Node, NodePropertyType, RcNode,
         EDGE_FIELDS, EDGE_OTHERS_PROPERTY, EDGE_TYPES_PROPERTY, NODE_OTHERS_PROPERTY,
@@ -16,6 +45,7 @@ pub mod snapshot {
     pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
         let now = Local::now().timestamp_millis();
         let mut graph = DiGraph::<usize, usize>::new();
+        
         let graph_mut = &mut graph;
         let (node_struct_arr, id_to_ordinal, node_map) = parse_snapshot_with_node(path, graph_mut);
         let root_id = 1;
@@ -39,6 +69,7 @@ pub mod snapshot {
             "calculate page own node spend {}ms",
             Local::now().timestamp_millis() - now
         );
+
         mark_retainer(
             root_id,
             &node_map,
@@ -48,6 +79,7 @@ pub mod snapshot {
             &mut edges_retainer,
             graph_mut,
         );
+
 
         let (doms, post_order) = simple_fast(&graph, NodeIndex::new(0));
 
@@ -60,6 +92,7 @@ pub mod snapshot {
                 dominator_node.retained_size += be_dominator_node.retained_size;
             }
         }
+
         println!(
             "calculate retainedsize spend {}ms",
             Local::now().timestamp_millis() - now
