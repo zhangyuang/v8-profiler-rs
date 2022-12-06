@@ -197,14 +197,14 @@ const tooltip: TooltipComponentOption = {
       </div>`
     }
     const edges = data.itemStyle.edges as Node['edges']
-    const sharedEdge = edges.find(item => item.name_or_index === 'shared')
+    const sharedEdge = edges.find(item => item.ni === 'shared')
     let source = ''
     if (sharedEdge) {
-      const sharedEdgeNode = id[sharedEdge?.to_node]
+      const sharedEdgeNode = id[sharedEdge?.tn]
       if (sharedEdgeNode) {
-        const edge = sharedEdgeNode.edges.find(item => item.name_or_index === 'script_or_debug_info')
+        const edge = sharedEdgeNode.edges.find(item => item.ni === 'script_or_debug_info')
         if (edge) {
-          source = id[id[edge.to_node]?.edges.find(item => item.name_or_index === 'name')?.to_node ?? Number.MAX_SAFE_INTEGER]?.name
+          source = id[id[edge.tn]?.edges.find(item => item.ni === 'name')?.tn ?? Number.MAX_SAFE_INTEGER]?.name
         }
       }
     }

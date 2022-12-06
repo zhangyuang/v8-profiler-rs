@@ -49,7 +49,7 @@ function generate(node: Node, id: Record<number | string, Node>) {
         if (nodeName.value && !parentNode.name.toLocaleLowerCase().includes(nodeName.value.toLocaleLowerCase())) {
           continue
         }
-        if (filterNative.value === '1' && nativeNode.includes(parentNode.node_type)) {
+        if (filterNative.value === '1' && nativeNode.includes(parentNode.nt)) {
           continue
         }
         if (!pathStore[parentId]) pathStore[parentId] = []
@@ -75,14 +75,14 @@ function generate(node: Node, id: Record<number | string, Node>) {
     const tempArr = queue
     queue = []
     tempArr.forEach(node => {
-      const children = node.edges.slice(0, edgeCounts.value).map(item => item.to_node)
+      const children = node.edges.slice(0, edgeCounts.value).map(item => item.tn)
       for (const childId of children) {
         const childNode = id[childId]
         if (nodeName.value && !childNode.name.toLocaleLowerCase().includes(nodeName.value.toLocaleLowerCase())) {
           continue
         }
         
-        if (filterNative.value === '1' && nativeNode.includes(childNode.node_type)) {
+        if (filterNative.value === '1' && nativeNode.includes(childNode.nt)) {
           continue
         }
         if (!pathStore[node.id]) pathStore[node.id] = []
@@ -110,12 +110,12 @@ function generate(node: Node, id: Record<number | string, Node>) {
         nodes.push({
           id: String(node.id),
           name: String(node.name),
-          value: node.retained_size,
+          value: node.rs,
           symbolSize: Number(node.id) === Number(nodeId.value) ? nodeSize.value * 4 : nodeSize.value as any,
           itemStyle: {
             // @ts-expect-error
             type: node.node_type,
-            self_size: node.self_size,
+            self_size: node.size,
             edges: node.edges,
             color: Number(node.id) === Number(nodeId.value) ? 'red' : '#5e6eba'
           }
@@ -128,15 +128,15 @@ function generate(node: Node, id: Record<number | string, Node>) {
   arr.forEach((relationship) => {
     const { source, target } = relationship;
     const sourceNode = id[source]
-    const edge = sourceNode.edges.find(item => Number(item.to_node) === Number(target))
+    const edge = sourceNode.edges.find(item => Number(item.tn) === Number(target))
     links.push({
       source: nodeToIndex[source],
       target: nodeToIndex[target],
       lineStyle: {
         // @ts-expect-error
         edge_type: edge!.edge_type,
-        name_or_index: edge!.name_or_index,
-        color: edge!.is_retainer ? 'red' : 'black'
+        name_or_index: edge!.ni,
+        color: edge!.isr ? 'red' : 'black'
       }
     })
   })

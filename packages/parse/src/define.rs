@@ -78,13 +78,13 @@ pub mod define {
     #[derive(Debug, Serialize, Deserialize, Clone)]
 
     pub struct Node {
-        pub node_type: JsValueType,
-        pub name: JsValueType,
-        pub id: JsValueType,
-        pub self_size: JsValueType,
-        pub edge_count: JsValueType,
+        pub nt: JsValueType, // node_type
+        pub name: JsValueType, // name
+        pub id: JsValueType, // id
+        pub size: JsValueType, // self_size
+        pub ec: JsValueType, // edge_count
         // pub trace_node_id: JsValueType,
-        pub retained_size: usize,
+        pub rs: usize, // retained_size
         pub edges: Vec<Edge>,
         pub parents: Vec<usize>,
     }
@@ -93,9 +93,9 @@ pub mod define {
 
     impl PartialOrd for Node {
         fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-            if self.self_size > other.self_size {
+            if self.size > other.size {
                 Some(Ordering::Greater)
-            } else if self.self_size == other.self_size {
+            } else if self.size == other.size {
                 Some(Ordering::Equal)
             } else {
                 Some(Ordering::Less)
@@ -105,17 +105,17 @@ pub mod define {
 
     impl PartialEq for Node {
         fn eq(&self, other: &Self) -> bool {
-            self.self_size == other.self_size
+            self.size == other.size
         }
     }
 
     #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct Edge {
-        pub edge_type: JsValueType,
-        pub to_node: JsValueType,
-        pub name_or_index: JsValueType,
-        pub is_weak_retainer: bool,
-        pub is_retainer: bool,
+        pub et: JsValueType, // edge_type
+        pub tn: JsValueType, // to_node
+        pub ni: JsValueType, // name_or_index
+        pub isw: usize, // is_weak_retainer 0 false 1 true
+        pub isr: usize, // is_retainer 0 false 1 true
     }
     pub enum NodePropertyType {
         Arr([&'static str; 14]),

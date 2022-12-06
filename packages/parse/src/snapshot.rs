@@ -52,8 +52,8 @@ pub mod snapshot {
         let user_root_id = root_node
             .edges
             .iter()
-            .find(|&edge| String::from(&edge.edge_type) == "shortcut");
-        let user_root_id = usize::from(&user_root_id.unwrap().to_node);
+            .find(|&edge| String::from(&edge.et) == "shortcut");
+        let user_root_id = usize::from(&user_root_id.unwrap().tn);
         let mut flags = vec![0; node_struct_arr.len()];
         let node_struct_arr_mut = &mut node_struct_arr;
         flags[get_ordinal(&id_to_ordinal, user_root_id)] = 1;
@@ -78,7 +78,7 @@ pub mod snapshot {
                 let dominator = doms.immediate_dominator(post_order_index).unwrap().index();
                 let mut dominator_node = node_struct_arr[dominator].borrow_mut();
                 let be_dominator_node = node_struct_arr[node_ordinal].borrow_mut();
-                dominator_node.retained_size += be_dominator_node.retained_size;
+                dominator_node.rs += be_dominator_node.rs;
             }
         }
 
@@ -86,7 +86,7 @@ pub mod snapshot {
             "calculate retainedsize spend {}ms",
             Local::now().timestamp_millis() - now
         );
-        node_struct_arr.sort_by(|a, b| b.borrow().retained_size.cmp(&a.borrow().retained_size));
+        node_struct_arr.sort_by(|a, b| b.borrow().rs.cmp(&a.borrow().rs));
         node_struct_arr
     }
 
@@ -103,19 +103,19 @@ pub mod snapshot {
             .map(|(index, _)| {
                 let node_start = index * node_fields_len;
                 let node = Rc::new(RefCell::new(Node {
-                    node_type: get_node_property(node_start, 0, &snapshot),
+                    nt: get_node_property(node_start, 0, &snapshot),
                     name: get_node_property(node_start, 1, &snapshot),
                     id: get_node_property(node_start, 2, &snapshot),
-                    self_size: get_node_property(node_start, 3, &snapshot),
-                    edge_count: get_node_property(node_start, 4, &snapshot),
+                    size: get_node_property(node_start, 3, &snapshot),
+                    ec: get_node_property(node_start, 4, &snapshot),
                     // trace_node_id: get_node_property(node_start, 5, &snapshot),
                     edges: vec![],
-                    retained_size: 0,
+                    rs: 0,
                     parents: vec![],
                 }));
                 let mut node_mut = node.borrow_mut();
                 id_to_ordinal.insert(usize::from(&node_mut.id), index);
-                node_mut.retained_size = usize::from(&node_mut.self_size);
+                node_mut.rs = usize::from(&node_mut.size);
                 graph.add_node(usize::from(&node_mut.id));
                 Rc::clone(&node)
             })
@@ -129,20 +129,20 @@ pub mod snapshot {
         node_struct_arr.iter().enumerate().for_each(|(_, node)| {
             let mut node = node.borrow_mut();
             let node_id = usize::from(&node.id);
-            let edge_count = usize::from(&node.edge_count);
+            let edge_count = usize::from(&node.ec);
             let edges = (0..edge_count)
                 .map(|_| {
                     let edge_start = edge_index * EDGE_FIELDS.len();
                     let edge_type = get_edgs_property(edge_start, 0, &snapshot);
                     let is_weak_retainer = String::from(&edge_type) == String::from("weak");
                     let edge = Edge {
-                        edge_type,
-                        name_or_index: get_edgs_property(edge_start, 1, &snapshot),
-                        to_node: get_edgs_property(edge_start, 2, &snapshot),
-                        is_weak_retainer,
-                        is_retainer: true,
+                        et: edge_type,
+                        ni: get_edgs_property(edge_start, 1, &snapshot),
+                        tn: get_edgs_property(edge_start, 2, &snapshot),
+                        isw: if is_weak_retainer {1} else {0},
+                        isr: 1,
                     };
-                    let to_node_id = usize::from(&edge.to_node);
+                    let to_node_id = usize::from(&edge.tn);
                     let to_node = &node_struct_arr[get_ordinal(&id_to_ordinal, to_node_id)];
 
                     if to_node_id != node_id {
@@ -201,9 +201,9 @@ pub mod snapshot {
             has_visited_map.insert(node_id, true);
             let node = &node_struct_arr[get_ordinal(id_to_ordinal, node_id)].borrow();
             for edge in &node.edges {
-                let to_node_id = usize::from(&edge.to_node);
+                let to_node_id = usize::from(&edge.tn);
                 if to_node_id != node_id {
-                    if !edge.is_weak_retainer {
+                    if edge.isw == 0 {
                         flags[get_ordinal(id_to_ordinal, to_node_id)] = 1;
                     }
                     let to_node =&node_struct_arr[get_ordinal(id_to_ordinal, to_node_id)];
@@ -222,22 +222,22 @@ pub mod snapshot {
             let mut node_mut = node.borrow_mut();
             let node_id = usize::from(&node_mut.id);
             for edge in &mut node_mut.edges {
-                let to_node_id = usize::from(&edge.to_node);
+                let to_node_id = usize::from(&edge.tn);
                 if to_node_id == node_id {
                     continue;
                 }
-                if edge.is_weak_retainer
-                    || (String::from(&edge.edge_type) == String::from("shortcut") && node_id != 1)
+                if edge.isw == 1
+                    || (String::from(&edge.et) == String::from("shortcut") && node_id != 1)
                 {
-                    edge.is_retainer = false
+                    edge.isr = 0
                 }
                 if node_id != 1
                     && (flags[get_ordinal(&id_to_ordinal, node_id)] == 0
                         && flags[get_ordinal(&id_to_ordinal, to_node_id)] == 1)
                 {
-                    edge.is_retainer = false
+                    edge.isr = 0
                 }
-                if edge.is_retainer {
+                if edge.isr == 1 {
                     graph.add_edge(
                         NodeIndex::new(get_ordinal(&id_to_ordinal, node_id)),
                         NodeIndex::new(get_ordinal(&id_to_ordinal, to_node_id)),

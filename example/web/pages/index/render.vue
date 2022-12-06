@@ -45,14 +45,14 @@ const render = (snapshort: Node[]) => {
     nodes.push({
       id: String(node.id),
       name: String(node.name),
-      value: node.retained_size,
+      value: node.rs,
       symbolSize: Number(nodeSize.value) + index * 2,
       itemStyle: {
         // @ts-expect-error
         type: node.node_type,
-        self_size: node.self_size,
+        self_size: node.size,
         edges: node.edges,
-        color: nativeNode.includes(node.node_type) ? 'black' : `#4187f2`
+        color: nativeNode.includes(node.nt) ? 'black' : `#4187f2`
       }
     })
 
