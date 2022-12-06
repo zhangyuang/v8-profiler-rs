@@ -47,7 +47,7 @@ pub mod snapshot {
         let mut graph = DiGraph::<usize, usize>::new();
 
         let graph_mut = &mut graph;
-        let (mut node_struct_arr, id_to_ordinal, node_map) = parse_snapshot_with_node(path, graph_mut);
+        let (mut node_struct_arr, id_to_ordinal) = parse_snapshot_with_node(path, graph_mut);
         let root_node = &node_struct_arr[0].borrow().clone();
         let user_root_id = root_node
             .edges
@@ -55,11 +55,11 @@ pub mod snapshot {
             .find(|&edge| String::from(&edge.edge_type) == "shortcut");
         let user_root_id = usize::from(&user_root_id.unwrap().to_node);
         let mut flags = vec![0; node_struct_arr.len()];
+        let node_struct_arr_mut = &mut node_struct_arr;
         flags[get_ordinal(&id_to_ordinal, user_root_id)] = 1;
         mark_page_own_node(
             user_root_id,
-            &node_map,
-            &mut HashMap::new(),
+            node_struct_arr_mut,
             &mut flags,
             &id_to_ordinal,
         );
@@ -68,12 +68,7 @@ pub mod snapshot {
             Local::now().timestamp_millis() - now
         );
 
-        mark_retainer(
-            &mut node_struct_arr,
-            &mut flags,
-            &id_to_ordinal,
-            graph_mut,
-        );
+        mark_retainer(node_struct_arr_mut, &mut flags, &id_to_ordinal, graph_mut);
 
         let (doms, post_order) = simple_fast(&graph, NodeIndex::new(0));
 
@@ -98,19 +93,15 @@ pub mod snapshot {
     fn parse_snapshot_with_node(
         path: &str,
         graph: &mut Graph<usize, usize>,
-    ) -> (
-        Vec<Rc<RefCell<Node>>>,
-        HashMap<usize, usize>,
-        HashMap<usize, Rc<RefCell<Node>>>,
-    ) {
+    ) -> (Vec<Rc<RefCell<Node>>>, HashMap<usize, usize>) {
         let now = Local::now().timestamp_millis();
-        let mut node_map = HashMap::new();
+        let mut id_to_ordinal: HashMap<usize, usize> = HashMap::new();
         let (snapshot, node_fields_len) = read_to_snapshot(path);
         let nodes = snapshot.snapshot.node_count;
         let node_struct_arr: Vec<RcNode> = (0..nodes)
             .enumerate()
-            .map(|(i, _)| {
-                let node_start = i * node_fields_len;
+            .map(|(index, _)| {
+                let node_start = index * node_fields_len;
                 let node = Rc::new(RefCell::new(Node {
                     node_type: get_node_property(node_start, 0, &snapshot),
                     name: get_node_property(node_start, 1, &snapshot),
@@ -123,58 +114,51 @@ pub mod snapshot {
                     parents: vec![],
                 }));
                 let mut node_mut = node.borrow_mut();
+                id_to_ordinal.insert(usize::from(&node_mut.id), index);
                 node_mut.retained_size = usize::from(&node_mut.self_size);
-                node_map.insert(usize::from(&node_mut.id), Rc::clone(&node));
                 graph.add_node(usize::from(&node_mut.id));
                 Rc::clone(&node)
             })
             .collect();
         let mut edge_index = 0; // 代表当前是第几个 edge
-        let mut id_to_ordinal: HashMap<usize, usize> = HashMap::new();
         println!(
             "calculate node {} spend {}ms",
             node_struct_arr.len(),
             Local::now().timestamp_millis() - now
         );
-        node_struct_arr
-            .iter()
-            .enumerate()
-            .for_each(|(index, node)| {
-                let mut node = node.borrow_mut();
-                let node_id = usize::from(&node.id);
-                id_to_ordinal.insert(usize::from(&node.id), index);
-                let edge_count = usize::from(&node.edge_count);
-                let edges = (0..edge_count)
-                    .map(|_| {
-                        let edge_start = edge_index * EDGE_FIELDS.len();
-                        let edge_type = get_edgs_property(edge_start, 0, &snapshot);
-                        let is_weak_retainer = String::from(&edge_type) == String::from("weak");
-                        let edge = Edge {
-                            edge_type,
-                            name_or_index: get_edgs_property(edge_start, 1, &snapshot),
-                            to_node: get_edgs_property(edge_start, 2, &snapshot),
-                            is_weak_retainer,
-                            is_retainer: true,
-                        };
-                        let to_node_id = usize::from(&edge.to_node);
-                        let to_node = node_map.get(&to_node_id).unwrap();
+        node_struct_arr.iter().enumerate().for_each(|(_, node)| {
+            let mut node = node.borrow_mut();
+            let node_id = usize::from(&node.id);
+            let edge_count = usize::from(&node.edge_count);
+            let edges = (0..edge_count)
+                .map(|_| {
+                    let edge_start = edge_index * EDGE_FIELDS.len();
+                    let edge_type = get_edgs_property(edge_start, 0, &snapshot);
+                    let is_weak_retainer = String::from(&edge_type) == String::from("weak");
+                    let edge = Edge {
+                        edge_type,
+                        name_or_index: get_edgs_property(edge_start, 1, &snapshot),
+                        to_node: get_edgs_property(edge_start, 2, &snapshot),
+                        is_weak_retainer,
+                        is_retainer: true,
+                    };
+                    let to_node_id = usize::from(&edge.to_node);
+                    let to_node = &node_struct_arr[get_ordinal(&id_to_ordinal, to_node_id)];
 
-                        if to_node_id != node_id {
-                            to_node.borrow_mut().parents.push(usize::from(&node.id));
-                        } else {
-                            node.parents.push(node_id)
-                        }
-                        edge_index += 1;
-                        edge
-                    })
-                    .collect();
-                node.edges = edges;
-            });
+                    if to_node_id != node_id {
+                        to_node.borrow_mut().parents.push(usize::from(&node.id));
+                    }
+                    edge_index += 1;
+                    edge
+                })
+                .collect();
+            node.edges = edges;
+        });
         println!(
             "calculate edge spend {}ms",
             Local::now().timestamp_millis() - now
         );
-        (node_struct_arr, id_to_ordinal, node_map)
+        (node_struct_arr, id_to_ordinal)
     }
     fn get_all_retainer_node(
         immdiately_node_dominator: &HashMap<usize, Vec<usize>>,
@@ -200,26 +184,33 @@ pub mod snapshot {
         }
         return queue;
     }
-
     fn mark_page_own_node(
         user_root_id: usize,
-        node_map: &HashMap<usize, RcNode>,
-        has_visited_map: &mut HashMap<usize, bool>,
+        node_struct_arr: &mut Vec<Rc<RefCell<Node>>>,
         flags: &mut Vec<i32>,
         id_to_ordinal: &HashMap<usize, usize>,
     ) {
-        if has_visited_map.get(&user_root_id).is_some() {
-            return;
-        }
-        let user_root = node_map.get(&user_root_id).unwrap().borrow();
-        has_visited_map.insert(user_root_id, true);
-        user_root.edges.iter().for_each(|edge| {
-            let to_node_id = usize::from(&edge.to_node);
-            if !edge.is_weak_retainer {
-                flags[get_ordinal(id_to_ordinal, to_node_id)] = 1;
-                mark_page_own_node(to_node_id, node_map, has_visited_map, flags, id_to_ordinal);
+        let user_root = &node_struct_arr[get_ordinal(id_to_ordinal, user_root_id)];
+        let mut has_visited_map = HashMap::new();
+        let mut queue:Vec<usize> = vec![usize::from(&user_root.borrow().id)];
+        while queue.len() !=0 {
+            let node_id = queue.pop().unwrap();
+            if has_visited_map.get(&node_id).is_some() {
+                continue;
             }
-        });
+            has_visited_map.insert(node_id, true);
+            let node = &node_struct_arr[get_ordinal(id_to_ordinal, node_id)].borrow();
+            for edge in &node.edges {
+                let to_node_id = usize::from(&edge.to_node);
+                if to_node_id != node_id {
+                    if !edge.is_weak_retainer {
+                        flags[get_ordinal(id_to_ordinal, to_node_id)] = 1;
+                    }
+                    let to_node =&node_struct_arr[get_ordinal(id_to_ordinal, to_node_id)];
+                    queue.push(usize::from(&to_node.borrow().id))
+                }
+            }
+        }
     }
     fn mark_retainer(
         node_struct_arr: &mut Vec<Rc<RefCell<Node>>>,
@@ -229,11 +220,11 @@ pub mod snapshot {
     ) {
         for node in node_struct_arr {
             let mut node_mut = node.borrow_mut();
-            let node_id =  usize::from(&node_mut.id);
+            let node_id = usize::from(&node_mut.id);
             for edge in &mut node_mut.edges {
                 let to_node_id = usize::from(&edge.to_node);
                 if to_node_id == node_id {
-                    continue
+                    continue;
                 }
                 if edge.is_weak_retainer
                     || (String::from(&edge.edge_type) == String::from("shortcut") && node_id != 1)
