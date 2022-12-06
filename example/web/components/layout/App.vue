@@ -34,8 +34,8 @@
       </div>
       <div class="chartContainer">
         <div class="loadingContainer" v-if="store.loaded === 'loading'">
-          <Loading color="#5b92f8" size="50" v-if="parseMethod!=='wasm'"></Loading>
-          <div class="text" v-if="parseMethod=='wasm'">文件解析中这大概需要 10-50s(wasm) 左右的时间，请稍后...</div>
+          <Loading color="#5b92f8" size="50" v-if="parseMethod                                   !==                                   'wasm'"></Loading>
+          <div class="text" v-if="parseMethod                                   ==                                   'wasm'">文件解析中这大概需要 10-50s(wasm) 左右的时间，请稍后...</div>
           <div class="text" v-else>文件解析中这大概需要10s左右的时间，请稍后...</div>
         </div>
 
@@ -119,7 +119,7 @@ const parse = async (e: any) => {
     const start = Date.now()
     if (parseMethod.value === 'wasm') {
       // use wasm
-      const { parse_v8_snapshot } =  await import('v8-profiler-rs')
+      const { parse_v8_snapshot } = process.env.NODE_ENV === 'development' ? await import('@/pkg/v8_profiler_rs') : await import('v8-profiler-rs')
       const result = e.target!.result?.toString()
       const snapShot = parse_v8_snapshot(result as string)
       console.log(`Parse Time spend ${Date.now() - start}ms`)

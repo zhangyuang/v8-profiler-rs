@@ -10,17 +10,20 @@ pub mod snapshot {
     use std::collections::HashMap;
     use std::fs::read_to_string;
     use std::rc::Rc;
-    use std::sync::{Arc, Mutex};
-    use std::thread;
-    use yuuang_petgraph::algo::dominators::Dominators;
+    use yuuang_petgraph::algo::dominators::{simple_fast, Dominators};
+    use yuuang_petgraph::graph::{DiGraph, NodeIndex};
+    use yuuang_petgraph::Graph;
     pub fn parse_snapshot(path: &str, multiply_threads: bool) -> Vec<RcNode> {
         let now = Local::now().timestamp_millis();
-        let (node_struct_arr, id_to_ordinal, node_map) = parse_snapshot_with_node(path);
+        let mut graph = DiGraph::<usize, usize>::new();
+        let graph_mut = &mut graph;
+        let (node_struct_arr, id_to_ordinal, node_map) = parse_snapshot_with_node(path, graph_mut);
         let root_id = 1;
         let root_node = &node_struct_arr[0].borrow().clone();
-        let user_root_id =  root_node.edges.iter().find(|&edge| {
-            String::from(&edge.edge_type) == "shortcut"
-        });
+        let user_root_id = root_node
+            .edges
+            .iter()
+            .find(|&edge| String::from(&edge.edge_type) == "shortcut");
         let user_root_id = usize::from(&user_root_id.unwrap().to_node);
         let mut flags = vec![0; node_struct_arr.len()];
         flags[get_ordinal(&id_to_ordinal, user_root_id)] = 1;
@@ -43,35 +46,28 @@ pub mod snapshot {
             &mut flags,
             &id_to_ordinal,
             &mut edges_retainer,
+            graph_mut,
         );
-        println!(
-            "calculate retaineder spend {}ms",
-            Local::now().timestamp_millis() - now
-        );
-        collect_edges(root_id, &node_map, &mut HashMap::new(), &mut edges_retainer);
-        println!(
-            "calculate collect_edges spend {}ms",
-            Local::now().timestamp_millis() - now
-        );
-        let doms: Dominators<u32> = Dominators {
-            root: 1,
-            dominators: edges_retainer.iter().cloned().collect(),
-        };
         let node_ids = node_struct_arr
             .iter()
             .map(|x| usize::from(&x.borrow().id))
             .collect::<Vec<usize>>();
-        let immdiately_node_dominator = if multiply_threads {
-            get_dominators_by_multiply_threads(node_ids, doms)
-        } else {
-            let mut immdiately_node_dominator: HashMap<usize, Vec<u32>> = HashMap::new();
-            for node_id in node_ids {
-                let dom_by: Vec<u32> = doms.immediately_dominated_by(node_id as u32).collect();
-                immdiately_node_dominator.insert(node_id, dom_by);
-            }
-            immdiately_node_dominator
-        };
-        let mut all_node_dominator: HashMap<usize, Vec<u32>> = HashMap::new();
+
+        let doms = simple_fast(&graph, NodeIndex::new(0));
+        let mut immdiately_node_dominator: HashMap<usize, Vec<usize>> = HashMap::new();
+        for node_id in &node_ids {
+            let dom_by: Vec<usize> = doms
+                .immediately_dominated_by(NodeIndex::new(get_ordinal(&id_to_ordinal, *node_id)))
+                .map(|node_index| node_ids[node_index.index()])
+                .collect();
+            immdiately_node_dominator.insert(*node_id, dom_by);
+        }
+        println!(
+            "calculate immediately_dominated_by spend {}ms",
+            Local::now().timestamp_millis() - now
+        );
+
+        let mut all_node_dominator: HashMap<usize, Vec<usize>> = HashMap::new();
         for node in &node_struct_arr {
             let node = node.borrow();
             let node_id = usize::from(&node.id);
@@ -79,7 +75,10 @@ pub mod snapshot {
                 get_all_retainer_node(&immdiately_node_dominator, node_id, &mut HashMap::new());
             all_node_dominator.insert(node_id, queue);
         }
-
+        println!(
+            "calculate all_node_dominator spend {}ms",
+            Local::now().timestamp_millis() - now
+        );
         for node in &node_struct_arr {
             let mut node = node.borrow_mut();
             let node_id = usize::from(&node.id);
@@ -101,8 +100,10 @@ pub mod snapshot {
 
         node_struct_arr
     }
+
     fn parse_snapshot_with_node(
         path: &str,
+        graph: &mut Graph<usize, usize>,
     ) -> (
         Vec<Rc<RefCell<Node>>>,
         HashMap<usize, usize>,
@@ -128,6 +129,7 @@ pub mod snapshot {
                     parents: vec![],
                 }));
                 node_map.insert(usize::from(&node.borrow_mut().id), Rc::clone(&node));
+                graph.add_node(usize::from(&node.borrow().id));
                 Rc::clone(&node)
             })
             .collect();
@@ -166,7 +168,6 @@ pub mod snapshot {
                         } else {
                             node.parents.push(node_id)
                         }
-
                         edge_index += 1;
                         edge
                     })
@@ -179,54 +180,11 @@ pub mod snapshot {
         );
         (node_struct_arr, id_to_ordinal, node_map)
     }
-    fn get_dominators_by_multiply_threads(
-        node_ids: Vec<usize>,
-        doms: Dominators<u32>,
-    ) -> HashMap<usize, Vec<u32>> {
-        let now = Local::now().timestamp_millis();
-        let immdiately_node_dominator = Arc::new(Mutex::new(HashMap::new()));
-        let mut handles = vec![];
-        let thread_nums = 10;
-        let (mut start, length) = (0, node_ids.len() - 1);
-        let node_ids = Arc::new(node_ids);
-        let doms = Arc::new(doms);
-        for num in 0..thread_nums {
-            let node_ids = Arc::clone(&node_ids);
-            let immdiately_node_dominator = Arc::clone(&immdiately_node_dominator);
-            let doms = Arc::clone(&doms);
-            let end: usize = if num == thread_nums - 1 {
-                node_ids.len() - 1
-            } else {
-                start + length / thread_nums
-            };
-            let handle = thread::spawn(move || {
-                for i in start..end {
-                    let node_id = node_ids[i];
-                    let dom_by: Vec<u32> = doms.immediately_dominated_by(node_id as u32).collect();
-                    immdiately_node_dominator
-                        .lock()
-                        .unwrap()
-                        .insert(node_id, dom_by);
-                }
-            });
-            start = end;
-            handles.push(handle);
-        }
-        for handle in handles {
-            handle.join().unwrap();
-        }
-        let immdiately_node_dominator_main = immdiately_node_dominator.lock().unwrap().clone();
-        println!(
-            "calculate immediately_dominated spend {}ms",
-            Local::now().timestamp_millis() - now
-        );
-        immdiately_node_dominator_main
-    }
     fn get_all_retainer_node(
-        immdiately_node_dominator: &HashMap<usize, Vec<u32>>,
+        immdiately_node_dominator: &HashMap<usize, Vec<usize>>,
         node_id: usize,
         has_visited_map: &mut HashMap<usize, bool>,
-    ) -> Vec<u32> {
+    ) -> Vec<usize> {
         let mut queue = vec![];
         if immdiately_node_dominator.get(&node_id).is_none() {
             return queue;
@@ -235,7 +193,7 @@ pub mod snapshot {
         for node in immediately_nodes {
             let node = *node as usize;
             if has_visited_map.get(&node).is_none() {
-                queue.push(node as u32);
+                queue.push(node);
                 has_visited_map.insert(node, true);
                 queue.append(&mut get_all_retainer_node(
                     immdiately_node_dominator,
@@ -246,25 +204,7 @@ pub mod snapshot {
         }
         return queue;
     }
-    fn collect_edges(
-        user_root_id: usize,
-        node_map: &HashMap<usize, RcNode>,
-        has_visited_map: &mut HashMap<usize, bool>,
-        edges_retainer: &mut Vec<(u32, u32)>,
-    ) {
-        if has_visited_map.get(&user_root_id).is_some() {
-            return;
-        }
-        let user_root = node_map.get(&user_root_id).unwrap().borrow();
-        has_visited_map.insert(user_root_id, true);
-        user_root.edges.iter().for_each(|edge| {
-            let to_node_id = usize::from(&edge.to_node);
-            if edge.is_retainer {
-                edges_retainer.push((to_node_id as u32, user_root_id as u32));
-            }
-            collect_edges(to_node_id, node_map, has_visited_map, edges_retainer);
-        });
-    }
+
     fn mark_page_own_node(
         user_root_id: usize,
         node_map: &HashMap<usize, RcNode>,
@@ -292,6 +232,7 @@ pub mod snapshot {
         flags: &mut Vec<i32>,
         id_to_ordinal: &HashMap<usize, usize>,
         edges_retainer: &mut Vec<(u32, u32)>,
+        graph: &mut Graph<usize, usize>,
     ) {
         if has_visited_map.get(&root_id).is_some() {
             return;
@@ -312,6 +253,13 @@ pub mod snapshot {
             {
                 edge.is_retainer = false
             }
+            if edge.is_retainer {
+                graph.add_edge(
+                    NodeIndex::new(get_ordinal(&id_to_ordinal, root_id)),
+                    NodeIndex::new(get_ordinal(&id_to_ordinal, to_node_id)),
+                    0,
+                );
+            }
 
             mark_retainer(
                 to_node_id,
@@ -320,6 +268,7 @@ pub mod snapshot {
                 flags,
                 id_to_ordinal,
                 edges_retainer,
+                graph,
             );
         });
     }
