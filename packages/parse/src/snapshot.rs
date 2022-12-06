@@ -6,20 +6,20 @@ pub mod snapshot {
     // #[cfg(feature = "wee_alloc")]
     // #[global_allocator]
     // static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-    
+
     // #[wasm_bindgen]
     // extern "C" {
     //     // Use `js_namespace` here to bind `console.log(..)` instead of just
     //     // `log(..)`
     //     #[wasm_bindgen(js_namespace = console)]
     //     fn log(s: &str);
-    
+
     //     // The `console.log` is quite polymorphic, so we can bind it with multiple
     //     // signatures. Note that we need to use `js_name` to ensure we always call
     //     // `log` in JS.
     //     #[wasm_bindgen(js_namespace = console, js_name = log)]
     //     fn log_u32(a: u32);
-    
+
     //     // Multiple arguments too!
     //     #[wasm_bindgen(js_namespace = console, js_name = log)]
     //     fn log_many(a: &str, b: &str);
@@ -45,10 +45,9 @@ pub mod snapshot {
     pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
         let now = Local::now().timestamp_millis();
         let mut graph = DiGraph::<usize, usize>::new();
-        
+
         let graph_mut = &mut graph;
-        let (node_struct_arr, id_to_ordinal, node_map) = parse_snapshot_with_node(path, graph_mut);
-        let root_id = 1;
+        let (mut node_struct_arr, id_to_ordinal, node_map) = parse_snapshot_with_node(path, graph_mut);
         let root_node = &node_struct_arr[0].borrow().clone();
         let user_root_id = root_node
             .edges
@@ -57,7 +56,6 @@ pub mod snapshot {
         let user_root_id = usize::from(&user_root_id.unwrap().to_node);
         let mut flags = vec![0; node_struct_arr.len()];
         flags[get_ordinal(&id_to_ordinal, user_root_id)] = 1;
-        let mut edges_retainer: Vec<(u32, u32)> = vec![];
         mark_page_own_node(
             user_root_id,
             &node_map,
@@ -71,15 +69,11 @@ pub mod snapshot {
         );
 
         mark_retainer(
-            root_id,
-            &node_map,
-            &mut HashMap::new(),
+            &mut node_struct_arr,
             &mut flags,
             &id_to_ordinal,
-            &mut edges_retainer,
             graph_mut,
         );
-
 
         let (doms, post_order) = simple_fast(&graph, NodeIndex::new(0));
 
@@ -97,7 +91,7 @@ pub mod snapshot {
             "calculate retainedsize spend {}ms",
             Local::now().timestamp_millis() - now
         );
-
+        node_struct_arr.sort_by(|a, b| b.borrow().retained_size.cmp(&a.borrow().retained_size));
         node_struct_arr
     }
 
@@ -228,51 +222,39 @@ pub mod snapshot {
         });
     }
     fn mark_retainer(
-        root_id: usize,
-        node_map: &HashMap<usize, RcNode>,
-        has_visited_map: &mut HashMap<usize, bool>,
+        node_struct_arr: &mut Vec<Rc<RefCell<Node>>>,
         flags: &mut Vec<i32>,
         id_to_ordinal: &HashMap<usize, usize>,
-        edges_retainer: &mut Vec<(u32, u32)>,
         graph: &mut Graph<usize, usize>,
     ) {
-        if has_visited_map.get(&root_id).is_some() {
-            return;
+        for node in node_struct_arr {
+            let mut node_mut = node.borrow_mut();
+            let node_id =  usize::from(&node_mut.id);
+            for edge in &mut node_mut.edges {
+                let to_node_id = usize::from(&edge.to_node);
+                if to_node_id == node_id {
+                    continue
+                }
+                if edge.is_weak_retainer
+                    || (String::from(&edge.edge_type) == String::from("shortcut") && node_id != 1)
+                {
+                    edge.is_retainer = false
+                }
+                if node_id != 1
+                    && (flags[get_ordinal(&id_to_ordinal, node_id)] == 0
+                        && flags[get_ordinal(&id_to_ordinal, to_node_id)] == 1)
+                {
+                    edge.is_retainer = false
+                }
+                if edge.is_retainer {
+                    graph.add_edge(
+                        NodeIndex::new(get_ordinal(&id_to_ordinal, node_id)),
+                        NodeIndex::new(get_ordinal(&id_to_ordinal, to_node_id)),
+                        0,
+                    );
+                }
+            }
         }
-        let mut root = node_map.get(&root_id).unwrap().borrow_mut();
-        let root_id = usize::from(&root.id);
-        has_visited_map.insert(root_id, false);
-        root.edges.iter_mut().for_each(|edge| {
-            let to_node_id = usize::from(&edge.to_node);
-            if edge.is_weak_retainer
-                || (String::from(&edge.edge_type) == String::from("shortcut") && root_id != 1)
-            {
-                edge.is_retainer = false
-            }
-            if root_id != 1
-                && (flags[get_ordinal(&id_to_ordinal, root_id)] == 0
-                    && flags[get_ordinal(&id_to_ordinal, to_node_id)] == 1)
-            {
-                edge.is_retainer = false
-            }
-            if edge.is_retainer {
-                graph.add_edge(
-                    NodeIndex::new(get_ordinal(&id_to_ordinal, root_id)),
-                    NodeIndex::new(get_ordinal(&id_to_ordinal, to_node_id)),
-                    0,
-                );
-            }
-
-            mark_retainer(
-                to_node_id,
-                node_map,
-                has_visited_map,
-                flags,
-                id_to_ordinal,
-                edges_retainer,
-                graph,
-            );
-        });
     }
 
     fn get_ordinal(id_to_ordinal: &HashMap<usize, usize>, node_id: usize) -> usize {

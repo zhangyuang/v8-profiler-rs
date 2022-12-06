@@ -33,7 +33,7 @@ const render = (snapshort: Node[]) => {
       return false
     }
     return true
-  }).sort((a, b) => b.retained_size - a.retained_size).slice(0, maxNodes.value).reverse()
+  }).slice(0, maxNodes.value).reverse()
   if (!sortNodes?.length) {
     Notify({
       type: 'danger',
