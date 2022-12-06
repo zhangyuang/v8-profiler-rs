@@ -1,7 +1,7 @@
 {
   "name": "v8-profiler-rs",
   "description": "Analyze v8 heapsnapshot By Rust",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "license": "MIT",
   "scripts": {
     "dev": "cargo build --release -p debug && ./target/release/debug",
