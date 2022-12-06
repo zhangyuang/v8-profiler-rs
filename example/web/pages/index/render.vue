@@ -25,45 +25,37 @@ const nodeId: Ref<string> = inject('nodeId')!
 
 const render = (snapshort: Node[]) => {
   const nodes: GraphSeriesOption['data'] = []
-  let sortNodes: Node[] = snapshort
-  if (nodeName.value) {
-    sortNodes = sortNodes.filter(node => node.name.toLocaleLowerCase().includes(nodeName.value.toLocaleLowerCase())).sort((a, b) => b.retained_size - a.retained_size).slice(0, maxNodes.value).reverse()
-    if (!sortNodes) {
-      Notify({
-        type: 'danger',
-        message: '不存在该节点'
-      })
-      return
+  let sortNodes: Node[] = snapshort.filter(node => {
+    if (nodeName.value && !node.name.toLocaleLowerCase().includes(nodeName.value.toLocaleLowerCase())) {
+      return false
     }
-    if (nodeId.value) {
-      sortNodes = [sortNodes.find(node => Number(node.id) === Number(nodeId.value))!]
-      if (!sortNodes.length) {
-        Notify({
-          type: 'danger',
-          message: '不存在该节点'
-        })
-        return
-      }
+    if (nodeId.value && Number(nodeId.value) !== Number(node.id)) {
+      return false
     }
-  } else {
-    sortNodes = sortNodes.sort((a, b) => b.retained_size - a.retained_size).slice(0, maxNodes.value).reverse()
+    return true
+  }).sort((a, b) => b.retained_size - a.retained_size).slice(0, maxNodes.value).reverse()
+  if (!sortNodes?.length) {
+    Notify({
+      type: 'danger',
+      message: '不存在该节点'
+    })
+    return
   }
   sortNodes.forEach((node, index) => {
-    if (node.node_type !== 'hidden' && node.node_type !== 'native') {
-      nodes.push({
-        id: String(node.id),
-        name: String(node.name),
-        value: node.retained_size,
-        symbolSize: Number(nodeSize.value) + index * 2,
-        itemStyle: {
-          // @ts-expect-error
-          type: node.node_type,
-          self_size: node.self_size,
-          edges: node.edges,
-          color: nativeNode.includes(node.node_type) ? 'black' : `#4187f2`
-        }
-      })
-    }
+    nodes.push({
+      id: String(node.id),
+      name: String(node.name),
+      value: node.retained_size,
+      symbolSize: Number(nodeSize.value) + index * 2,
+      itemStyle: {
+        // @ts-expect-error
+        type: node.node_type,
+        self_size: node.self_size,
+        edges: node.edges,
+        color: nativeNode.includes(node.node_type) ? 'black' : `#4187f2`
+      }
+    })
+
   })
   const chartDom = document.getElementById('main')!
   const myChart = echarts.init(chartDom)

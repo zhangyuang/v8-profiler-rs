@@ -8,7 +8,7 @@
         <!-- <Field class="field" v-model="nodeSize" label="节点大小"></Field> -->
         <Field class="field" v-model="nodeName" label="节点名称"></Field>
         <Field class="field" v-model="nodeId" label="节点id"></Field>
-        <Field class="field" v-model="parseMethod" label="解析方式" placeholder="http/wasm"></Field>
+        <!-- <Field class="field" v-model="parseMethod" label="解析方式" placeholder="http/wasm"></Field> -->
         <template v-if=isIndex>
           <Field class="field" v-model="maxNodes" label="节点数量"></Field>
         </template>
@@ -75,7 +75,7 @@ const fileRef = ref()
 const nodeName = ref('')
 const nodeId = ref('')
 const filterNative = ref('0')
-const parseMethod = ref('')
+const parseMethod = ref('wasm')
 const label = reactive({
   show: true,
   position: 'right',
