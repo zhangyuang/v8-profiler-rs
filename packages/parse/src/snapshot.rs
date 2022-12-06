@@ -114,6 +114,14 @@ pub mod snapshot {
                     parents: vec![],
                 }));
                 let mut node_mut = node.borrow_mut();
+                // let mut name = String::from(&node_mut.name);
+                // node_mut.name = JsValueType::JsString(if name.len() > 50  {
+                //     let idx = find_char_boundary(name.as_str(), 50);
+                //     name.truncate(idx);
+                //     name
+                // } else {
+                //     name
+                // });
                 id_to_ordinal.insert(usize::from(&node_mut.id), index);
                 node_mut.rs = usize::from(&node_mut.size);
                 graph.add_node(usize::from(&node_mut.id));
@@ -135,7 +143,7 @@ pub mod snapshot {
                     let edge_start = edge_index * EDGE_FIELDS.len();
                     let edge_type = get_edgs_property(edge_start, 0, &snapshot);
                     let is_weak_retainer = String::from(&edge_type) == String::from("weak");
-                    let edge = Edge {
+                    let mut edge = Edge {
                         et: edge_type,
                         ni: get_edgs_property(edge_start, 1, &snapshot),
                         tn: get_edgs_property(edge_start, 2, &snapshot),
@@ -295,7 +303,18 @@ pub mod snapshot {
         };
         edge_property_val
     }
-
+    fn find_char_boundary(s: &str, index: usize) -> usize {
+        if s.len() <= index {
+            return index;
+        }
+        
+        let mut new_index = index;
+        while !s.is_char_boundary(new_index) {
+            new_index += 1;
+        }
+        
+        new_index
+    }
     pub fn get_node_property(
         node_start: usize,
         col: usize,
