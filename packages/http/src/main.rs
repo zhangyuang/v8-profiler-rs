@@ -14,7 +14,7 @@ async fn main() {
         .and(warp::body::json())
         .map(|body: Body| {
             let source = &body.source;
-            let node_struct_arr = parse_snapshot(source, true);
+            let node_struct_arr = parse_snapshot(source);
             warp::reply::json(&node_struct_arr)
         })
         .with(warp::compression::gzip());

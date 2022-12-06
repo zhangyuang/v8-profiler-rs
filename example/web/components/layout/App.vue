@@ -34,8 +34,11 @@
       </div>
       <div class="chartContainer">
         <div class="loadingContainer" v-if="store.loaded === 'loading'">
-          <Loading color="#5b92f8" size="50" v-if="parseMethod                                   !==                                   'wasm'"></Loading>
-          <div class="text" v-if="parseMethod                                   ==                                   'wasm'">文件解析中这大概需要 10-50s(wasm) 左右的时间，请稍后...</div>
+          <Loading color="#5b92f8" size="50"
+            v-if="parseMethod !== 'wasm'"></Loading>
+          <div class="text"
+            v-if="parseMethod == 'wasm'">使用 Webassembly 解析文件中这大概需要
+            3-10s 左右的时间，请稍后...</div>
           <div class="text" v-else>文件解析中这大概需要10s左右的时间，请稍后...</div>
         </div>
 

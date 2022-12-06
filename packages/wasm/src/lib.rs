@@ -34,7 +34,7 @@ use rs_parse_snapshot::snapshot::snapshot::parse_snapshot;
 
 #[wasm_bindgen]
 pub fn parse_v8_snapshot(path: &str) -> js_sys::JsString {
-    let node_struct_arr = parse_snapshot(path, false);
+    let node_struct_arr = parse_snapshot(path);
     let str = serde_json::to_string(&node_struct_arr).unwrap();
     return str.into();
 }
