@@ -10,10 +10,10 @@ pub mod snapshot {
     use std::collections::HashMap;
     use std::fs::read_to_string;
     use std::rc::Rc;
-    use yuuang_petgraph::algo::dominators::{simple_fast, Dominators};
-    use yuuang_petgraph::graph::{DiGraph, NodeIndex};
-    use yuuang_petgraph::Graph;
-    pub fn parse_snapshot(path: &str, multiply_threads: bool) -> Vec<RcNode> {
+    use yuuang_dominators::algo::dominators::simple_fast;
+    use yuuang_dominators::graph::{DiGraph, NodeIndex};
+    use yuuang_dominators::Graph;
+    pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
         let now = Local::now().timestamp_millis();
         let mut graph = DiGraph::<usize, usize>::new();
         let graph_mut = &mut graph;
@@ -48,50 +48,17 @@ pub mod snapshot {
             &mut edges_retainer,
             graph_mut,
         );
-        let node_ids = node_struct_arr
-            .iter()
-            .map(|x| usize::from(&x.borrow().id))
-            .collect::<Vec<usize>>();
 
-        let doms = simple_fast(&graph, NodeIndex::new(0));
-        let mut immdiately_node_dominator: HashMap<usize, Vec<usize>> = HashMap::new();
-        for node_id in &node_ids {
-            let dom_by: Vec<usize> = doms
-                .immediately_dominated_by(NodeIndex::new(get_ordinal(&id_to_ordinal, *node_id)))
-                .map(|node_index| node_ids[node_index.index()])
-                .collect();
-            immdiately_node_dominator.insert(*node_id, dom_by);
-        }
-        println!(
-            "calculate immediately_dominated_by spend {}ms",
-            Local::now().timestamp_millis() - now
-        );
+        let (doms, post_order) = simple_fast(&graph, NodeIndex::new(0));
 
-        let mut all_node_dominator: HashMap<usize, Vec<usize>> = HashMap::new();
-        for node in &node_struct_arr {
-            let node = node.borrow();
-            let node_id = usize::from(&node.id);
-            let queue =
-                get_all_retainer_node(&immdiately_node_dominator, node_id, &mut HashMap::new());
-            all_node_dominator.insert(node_id, queue);
-        }
-        println!(
-            "calculate all_node_dominator spend {}ms",
-            Local::now().timestamp_millis() - now
-        );
-        for node in &node_struct_arr {
-            let mut node = node.borrow_mut();
-            let node_id = usize::from(&node.id);
-            let all_node_dominators = all_node_dominator.get(&node_id).unwrap();
-            let mut retained_size = usize::from(&node.self_size);
-            for retained_node_id in all_node_dominators {
-                let retained_node_id = *retained_node_id as usize;
-                if retained_node_id != node_id {
-                    let retained_node = node_map.get(&retained_node_id);
-                    retained_size += usize::from(&retained_node.unwrap().borrow().self_size);
-                }
+        for post_order_index in post_order {
+            let node_ordinal = post_order_index.index();
+            if node_ordinal != 0 {
+                let dominator = doms.immediate_dominator(post_order_index).unwrap().index();
+                let mut dominator_node = node_struct_arr[dominator].borrow_mut();
+                let be_dominator_node = node_struct_arr[node_ordinal].borrow_mut();
+                dominator_node.retained_size += be_dominator_node.retained_size;
             }
-            node.retained_size = Some(retained_size)
         }
         println!(
             "calculate retainedsize spend {}ms",
@@ -125,11 +92,13 @@ pub mod snapshot {
                     edge_count: get_node_property(node_start, 4, &snapshot),
                     // trace_node_id: get_node_property(node_start, 5, &snapshot),
                     edges: vec![],
-                    retained_size: None,
+                    retained_size: 0,
                     parents: vec![],
                 }));
-                node_map.insert(usize::from(&node.borrow_mut().id), Rc::clone(&node));
-                graph.add_node(usize::from(&node.borrow().id));
+                let mut node_mut = node.borrow_mut();
+                node_mut.retained_size = usize::from(&node_mut.self_size);
+                node_map.insert(usize::from(&node_mut.id), Rc::clone(&node));
+                graph.add_node(usize::from(&node_mut.id));
                 Rc::clone(&node)
             })
             .collect();

@@ -8,7 +8,6 @@ const deploy = async () => {
   const demoPath = resolve(cwd, './example/package.json')
   const demoPkg = require(demoPath)
   demoPkg.dependencies['v8-profiler-rs'] = require(resolve(cwd, './package.json')).version
-  console.log(demoPkg)
   await writeFile(demoPath, JSON.stringify(demoPkg, null, 2) + '\n')
   mkdir(resolve(cwd, './example/web/pkg'))
   await writeFile(resolve(cwd, './example/web/pkg/v8_profiler_rs.js'), '')

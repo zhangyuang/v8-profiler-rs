@@ -84,7 +84,7 @@ pub mod define {
         pub self_size: JsValueType,
         pub edge_count: JsValueType,
         // pub trace_node_id: JsValueType,
-        pub retained_size: Option<usize>,
+        pub retained_size: usize,
         pub edges: Vec<Edge>,
         pub parents: Vec<usize>,
     }
