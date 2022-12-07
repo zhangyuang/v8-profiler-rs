@@ -7,8 +7,8 @@
         </div>
         <!-- <Field class="field" v-model="nodeSize" label="节点大小"></Field> -->
         <Field class="field" v-model="nodeName" label="节点名称"></Field>
-        <Field class="field" v-model="nodeId" label="节点id"></Field>
         <template v-if=isIndex>
+          <Field class="field" v-model="nodeId" label="节点id"></Field>
           <Field class="field" v-model="maxNodes" label="节点数量"></Field>
         </template>
         <template v-if=!isIndex>
@@ -16,17 +16,11 @@
           <Field class="field" v-model="childDepth" label="引用深度"></Field>
           <Field class="field" v-model="edgeCounts" label="最大边数量"></Field>
           <Field class="field" v-model="filterNative" label="过滤原生节点"></Field>
-          <!-- <div>
-            <div class="refText">
-              all-0 strong-1 weak-2
-            </div>
-            <Field class="field" v-model="weakOrStrong" label="过滤引用关系"></Field>
-          </div> -->
         </template>
         <DropdownMenu class="field">
           <DropdownItem class="field" v-model="parseMethod" :options="option" />
         </DropdownMenu>
-        <input type="file" @change="upload" ref="fileRef" accept=".heapsnapshot" class="inputFile">
+        <input type="file" @change="upload" ref="fileRef" accept=".heapsnapshot" class="inputFile" multiple="true">
         <Button type="primary" class="btn" @click="fileRef.click()" v-if="store.loaded !== 'finish'">上传文件</Button>
         <Button type="primary" class="btn" @click="confirm">重新绘制</Button>
         <!-- <Button type="primary" class="btn" @click="show">查看序列化数据</Button> -->
@@ -54,44 +48,53 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, provide, reactive, watch } from 'vue'
+import { ref, provide, reactive, watch, toRefs } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Button, Field, Notify, Loading, DropdownMenu, DropdownItem } from 'vant'
 import { onlyCsr } from 'ssr-hoc-vue3'
 import axios from 'axios'
-import type { TooltipComponentOption } from 'echarts'
-import type { Node } from '@/type'
+import type { Node, RenderOptions } from '@/type'
 import { useSnapShotStore } from '@/store'
+import { sortByRs } from '@/utils'
 const store = useSnapShotStore()
 const router = useRouter()
 const route = useRoute()
 const path = route.path
-const isIndex = ref(path === '/')
-const maxNodes = ref(50)
-const nodeSize = ref(10)
-const edgeLength = ref(150)
-const edgeCounts = ref(5)
-const parentDepth = ref(2)
-const childDepth = ref(2)
-const weakOrStrong = ref('0')
 const fileRef = ref()
-const nodeName = ref('')
-const nodeId = ref('')
-const filterNative = ref('0')
-const parseMethod = ref('wasm')
-const label = reactive({
+
+const renderOptions = reactive({
+  isIndex: path === '/',
+  maxNodes: 50,
+  nodeSize: 10,
+  edgeLength: 150,
+  edgeCounts: 5,
+  parentDepth: 2,
+  childDepth: 2,
+  weakOrStrong: '0',
+  nodeName: '',
+  nodeId: '',
+  filterNative: 0,
+  parseMethod: 'wasm',
+  tooltip: {},
+  force: {},
+  label: {}
+} as RenderOptions)
+defineExpose({
+  renderOptions
+})
+renderOptions.label = {
   show: true,
   position: 'right',
   formatter: (params: any) => {
     return (params.data.name?.length < 20 && params.data.name?.length > 0) ? params.data.name : params.data.id
   }
-})
+}
 const option = [
   { text: '解析方式', value: 'wasm' },
   { text: 'wasm', value: 'wasm' },
   { text: 'http', value: 'http' },
 ];
-const defaultDemoStr = __isBrowser__ ? JSON.stringify(require('@/pages/index/closure.json')) : {}
+const defaultDemoStr = __isBrowser__ ? JSON.stringify(require('@/pages/index/closure.json')) : ''
 const toRepo = () => {
   window.open('https://github.com/zhangyuang/v8-profiler-rs')
 }
@@ -99,59 +102,107 @@ const handbook = () => {
   window.open('http://doc.ssr-fc.com/docs/features$memory')
 }
 watch(router.currentRoute, (to) => {
-  isIndex.value = to.path === '/'
+  renderOptions.isIndex = to.path === '/'
 })
 const id: Record<number | string, Node> = {}
 
 const defaultDemo = async () => {
-  await parse({
-    target: {
-      result: defaultDemoStr
+  await parse(defaultDemoStr)
+}
+const upload = async (e: any) => {
+  //@ts-expect-error
+  const file = Array.from((e.target as HTMLInputElement)?.files)
+  if (!file || file.length > 2) {
+    Notify({
+      type: 'danger',
+      message: '当前最大只支持选择两个文件'
+    })
+    return
+  }
+  if (file.length == 2) {
+    file.sort((a, b) => a.size - b.size);
+    const [small, big] = await Promise.all([read(file[0]), read(file[1])]);
+    const smallRes = await parse(small)
+    setTimeout(async () => {
+      const bigRes = await parse(big)
+      const [additionalNode, biggerNode] = await parseMultiply([smallRes, bigRes])
+      console.log(additionalNode, biggerNode)
+      store.setData({
+        data: additionalNode.concat(biggerNode)
+      })
+      confirm()
+    }, 1000);
+    return
+  }
+  const result = await read(file[0])
+  const parseResult = await parse(result)
+  store.setData({
+    data: parseResult
+  })
+  confirm()
+}
+
+const read = async (file: any): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.readAsText(file, 'utf-8')
+    reader.onload = (e: any) => {
+      resolve(e.target!.result?.toString())
     }
   })
 }
-const upload = async (e: any) => {
-  const reader = new FileReader()
-  const file = e.target?.files?.[0]
-  if (!file) {
-    return
+const parseMultiply = (arr: Array<Node[]>) => {
+  const additionalNode: Node[] = []
+  const biggerNode: Node[] = []
+  const [smallRes, bigRes] = [arr[0], arr[1]];
+  const smallNodeMap: Record<number, Node> = {}
+  smallRes.forEach((smallNode, index) => {
+    smallNodeMap[index] = smallNode
+  })
+  for (const bigNode of bigRes) {
+    const { id: bigNodeId } = bigNode
+    if (!smallNodeMap[bigNodeId]) {
+      // 新增节点
+      bigNode.compareType = 'addtional'
+      additionalNode.push(bigNode)
+    } else {
+      // 相同 id 的节点 retained_size 发生变化的
+      if (bigNode.rs > smallNodeMap[bigNodeId].rs) {
+        bigNode.compareType = 'bigger'
+        biggerNode.push(bigNode)
+      }
+    }
   }
-  reader.readAsText(file, 'utf-8')
-  reader.onload = (e: any) => {
-    parse(e)
-  }
+  return [additionalNode.sort(sortByRs).slice(0, Math.ceil(renderOptions.maxNodes / 2)), biggerNode.sort(sortByRs).slice(0, Math.ceil(renderOptions.maxNodes / 2))]
 }
-const parse = async (e: any) => {
+
+const parse = async (result: string): Promise<Node[]> => {
   try {
+    let parseResult: Node[] = []
     store.setLoading('loading')
     const start = Date.now()
-    if (parseMethod.value === 'wasm') {
+    if (renderOptions.parseMethod === 'wasm') {
       // use wasm
-      const { parse_v8_snapshot } = process.env.NODE_ENV === 'development' ? await import('@/pkg/v8_profiler_rs') : await import('v8-profiler-rs')
-      const result = e.target!.result?.toString()
+      const { parse_v8_snapshot } = process.env.NODE_ENV === 'development' ? await import(`@/pkg/v8_profiler_rs`) : await import('v8-profiler-rs')
       const snapShot = parse_v8_snapshot(result as string)
-      console.log(`Parse Time spend ${Date.now() - start}ms`)
-      store.setData({
-        data: JSON.parse(snapShot)
-      })
+      console.log(`Complete parse time spend ${Date.now() - start}ms`)
+      parseResult = JSON.parse(snapShot)
     } else {
       const url = process.env.NODE_ENV === 'development' ? 'http://0.0.0.0:3000/parsev8' : `${location.protocol}//v8.ssr-fc.com/parsev8`
       const res = await axios.post(url, {
-        source: e.target!.result?.toString()
+        source: result
       }, {
         maxContentLength: 100000000,
         maxBodyLength: 1000000000
       })
-      console.log(`Parse Time spend ${Date.now() - start}ms`)
-      store.setData({
-        data: res.data
-      })
+      console.log(`Complete parse time spend ${Date.now() - start}ms`)
+      parseResult = res.data
     }
     store.setLoading('finish')
     for (const item of store.data) {
       id[item.id] = item
     }
-    confirm()
+    return parseResult
   } catch (error) {
     console.log(error)
     store.setLoading('finish')
@@ -159,6 +210,7 @@ const parse = async (e: any) => {
       type: 'danger',
       message: '请确认当前上传的文件内容是否正确'
     })
+    return []
   }
 }
 const oneKb = 1024
@@ -179,7 +231,7 @@ const byteToMb = (byte: number | string) => {
   const val = Number(byte)
   return (val / oneMb).toFixed(2) + 'Mb'
 }
-const tooltip: TooltipComponentOption = {
+renderOptions.tooltip = {
   trigger: 'item',
   show: true,
   formatter: (params: any) => {
@@ -209,7 +261,12 @@ const tooltip: TooltipComponentOption = {
         }
       }
     }
+    const { compareType } = data.itemStyle
     return `<div class="tooltipText">
+      ${compareType ? ` <div class="item">
+        <div class="name">比较类型: ${compareType === 'addtional' ? '新增节点' : '可GC大小增大节点'} </div>
+      </div>` : ''
+      }
       <div class="item">
         <div class="name">节点ID:  </div>
         <div class="code">${data.id || ''}</div>
@@ -241,36 +298,23 @@ const tooltip: TooltipComponentOption = {
   displayMode: 'multipleByCoordSys',
   position: 'right'
 }
-const force = reactive({
+renderOptions.force = {
   initLayout: 'circular',
   gravity: 0.1,
   repulsion: 200,
   edgeLength: 150
-})
+}
 const children = ref()
-
-// const show = () => {
-//   window.open('/format')
-// }
 const confirm = () => {
+  console.log('renderOptions', renderOptions)
   children.value.render(store.data)
 }
 
-provide('maxNodes', maxNodes)
-provide('nodeSize', nodeSize)
-provide('edgeLength', edgeLength)
-provide('force', force)
-provide('edgeCounts', edgeCounts)
-provide('parentDepth', parentDepth)
-provide('childDepth', childDepth)
-provide('label', label)
-provide('tooltip', tooltip)
-provide('weakOrStrong', weakOrStrong)
-provide('nodeName', nodeName)
-provide('nodeId', nodeId)
-provide('filterNative', filterNative)
+provide('renderOptions', renderOptions)
 
-
+const { maxNodes, isIndex, edgeCounts, parentDepth, childDepth,
+  nodeName, nodeId, filterNative, parseMethod,
+} = toRefs(renderOptions)
 </script>
 
 <style lang="less">

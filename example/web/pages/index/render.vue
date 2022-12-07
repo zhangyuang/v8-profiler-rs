@@ -3,25 +3,22 @@
 </template>
 
 <script lang="ts" setup>
-import { inject, Ref, onMounted } from 'vue'
+import { inject, onMounted, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import { Notify } from 'vant'
 import type { EChartsOption, GraphSeriesOption } from 'echarts'
 import { useSnapShotStore } from '@/store'
 import './index.less'
-import type { Node } from '@/type'
+import type { Node, RenderOptions } from '@/type'
 import { getColor } from '@/utils'
 
 const store = useSnapShotStore()
 const router = useRouter()
-const maxNodes: Ref<number> = inject('maxNodes')!
-const nodeSize: Ref<number> = inject('nodeSize')!
-const force = inject('force')
-const label = inject('label')
-const tooltip = inject('tooltip')
-const nodeName: Ref<string> = inject('nodeName')!
-const nodeId: Ref<string> = inject('nodeId')!
+const renderOptions = inject('renderOptions')
+const { maxNodes, nodeSize,
+  nodeName, nodeId, tooltip, force, label
+} = toRefs(renderOptions as RenderOptions)
 
 const render = (snapshort: Node[]) => {
   const nodes: GraphSeriesOption['data'] = []
@@ -52,7 +49,8 @@ const render = (snapshort: Node[]) => {
         type: node.node_type,
         self_size: node.size,
         edges: node.edges,
-        color: getColor(node, index, maxNodes.value)
+        color: getColor(node, index, maxNodes.value),
+        compareType: node.compareType
       }
     })
   })
@@ -74,8 +72,8 @@ const render = (snapshort: Node[]) => {
         data: nodes,
         edges: links as any,
         edgeSymbol: ['arrow', 'none'],
-        label: label as any,
-        force: force as any,
+        label: label.value,
+        force: force.value,
         roam: true,
         draggable: true,
       }

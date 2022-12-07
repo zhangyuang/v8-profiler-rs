@@ -30,5 +30,23 @@ export type Node = {
     isw: boolean;
     isr: boolean;
   }[];
+  compareType?: string
   parents: number[];
+}
+export type RenderOptions = {
+  isIndex: boolean;
+  maxNodes: number;
+  nodeSize: number;
+  edgeLength: number;
+  edgeCounts: number;
+  parentDepth: number;
+  childDepth: number;
+  weakOrStrong: string;
+  nodeName: string;
+  nodeId: string;
+  filterNative: number,
+  parseMethod: 'wasm' | 'http',
+  tooltip: {},
+  force: {},
+  label: {};
 }

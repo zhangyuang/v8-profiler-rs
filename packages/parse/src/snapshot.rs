@@ -1,5 +1,31 @@
 pub mod snapshot {
-    // use crate::console::console::;
+    #[cfg(target_arch = "wasm32")]
+    use wasm_bindgen::prelude::*;
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen]
+    extern "C" {
+        // Use `js_namespace` here to bind `console.log(..)` instead of just
+        // `log(..)`
+        #[wasm_bindgen(js_namespace = console)]
+        fn log(s: &str);
+
+        // The `console.log` is quite polymorphic, so we can bind it with multiple
+        // signatures. Note that we need to use `js_name` to ensure we always call
+        // `log` in JS.
+        #[wasm_bindgen(js_namespace = console, js_name = log)]
+        fn log_u32(a: u32);
+
+        // Multiple arguments too!
+        #[wasm_bindgen(js_namespace = console, js_name = log)]
+        fn log_many(a: &str, b: &str);
+    }
+    #[cfg(target_arch = "wasm32")]
+    macro_rules! console_log {
+    // Note that this is using the `log` function imported above during
+    // `bare_bones`
+    ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
+    }
+
     use crate::define::define::{
         Edge, EdgePropertyType, Heapsnapshot, JsValueType, Node, NodePropertyType, RcNode,
         EDGE_FIELDS, EDGE_OTHERS_PROPERTY, EDGE_TYPES_PROPERTY, NODE_OTHERS_PROPERTY,
@@ -14,8 +40,7 @@ pub mod snapshot {
     use yuuang_dominators::graph::{DiGraph, NodeIndex};
     use yuuang_dominators::Graph;
     pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
-        // #[cfg(target_arch = "wasm32")]
-        // console_log!();
+       
         let now = Local::now().timestamp_millis();
         let mut graph = DiGraph::<usize, usize>::new();
 
@@ -37,6 +62,11 @@ pub mod snapshot {
             &id_to_ordinal,
         );
         println!(
+            "calculate page own node spend {} ms",
+            Local::now().timestamp_millis() - now
+        );
+        #[cfg(target_arch = "wasm32")]
+        console_log!(
             "calculate page own node spend {}ms",
             Local::now().timestamp_millis() - now
         );
@@ -60,6 +90,11 @@ pub mod snapshot {
         }
 
         println!(
+            "calculate retainedsize spend {}ms",
+            Local::now().timestamp_millis() - now
+        );
+        #[cfg(target_arch = "wasm32")]
+        console_log!(
             "calculate retainedsize spend {}ms",
             Local::now().timestamp_millis() - now
         );
@@ -113,7 +148,13 @@ pub mod snapshot {
             .collect();
         let mut edge_index = 0; // 代表当前是第几个 edge
         println!(
-            "calculate node {} spend {}ms",
+            "calculate {} nodes spend {}ms",
+            node_struct_arr.len(),
+            Local::now().timestamp_millis() - now
+        );
+        #[cfg(target_arch = "wasm32")]
+        console_log!(
+            "calculate {} nodes spend {}ms",
             node_struct_arr.len(),
             Local::now().timestamp_millis() - now
         );
@@ -149,6 +190,11 @@ pub mod snapshot {
             "calculate edge spend {}ms",
             Local::now().timestamp_millis() - now
         );
+        #[cfg(target_arch = "wasm32")]
+        console_log!(
+            "calculate edge spend {}ms",
+            Local::now().timestamp_millis() - now
+        );
         (node_struct_arr, id_to_ordinal)
     }
     fn mark_page_own_node(
@@ -169,8 +215,8 @@ pub mod snapshot {
             let node = &node_struct_arr[get_ordinal(id_to_ordinal, node_id)].borrow();
             for edge in &node.edges {
                 let to_node_id = usize::from(&edge.tn);
-                if to_node_id != node_id  && edge.isw == 0 {
-                    flags[get_ordinal(id_to_ordinal, to_node_id)] = 1; 
+                if to_node_id != node_id && edge.isw == 0 {
+                    flags[get_ordinal(id_to_ordinal, to_node_id)] = 1;
                     queue.push(to_node_id);
                 }
             }

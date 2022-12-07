@@ -30,3 +30,5 @@ export const getColor = (node: Node, index: string | number, maxNodes: string | 
     return '#4187f2'
   }
 }
+
+export const sortByRs = (a:Node, b:Node) => b.rs - a.rs

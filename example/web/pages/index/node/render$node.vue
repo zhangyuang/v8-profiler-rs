@@ -3,28 +3,21 @@
 </template>
 
 <script lang="ts" setup>
-import { Ref, inject, onMounted, ref } from 'vue'
+import {  inject, onMounted, ref, toRefs } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import type { EChartsOption, GraphSeriesOption } from 'echarts'
 import { useSnapShotStore } from '@/store'
-import { noRepeat ,nativeNode} from '@/utils'
+import { noRepeat, nativeNode } from '@/utils'
 import '@/pages/index/index.less'
-import type { Node } from '../../../type'
+import type { Node, RenderOptions } from '@/type'
 
 const store = useSnapShotStore()
-const edgeCounts: Ref<number> = inject('edgeCounts')!
-const nodeSize: Ref<number> = inject('nodeSize')!
-const force = inject('force')
-const label = inject('label')
-const tooltip = inject('tooltip')
-const filterNative: Ref<string> = inject('filterNative')!
-const parentDepth: Ref<number> = inject('parentDepth')!
-const childDepth: Ref<number> = inject('childDepth')!
-const nodeName: Ref<string> = inject('nodeName')!
-const weakOrStrong: Ref<string> = inject('weakOrStrong')!
-
-  const router = useRouter()
+const renderOptions = inject('renderOptions')
+const { nodeSize, childDepth, parentDepth, filterNative, edgeCounts,nodeName,weakOrStrong,
+  tooltip, force, label
+} = toRefs(renderOptions as RenderOptions)
+const router = useRouter()
 const route = useRoute()
 const { node: rawNodeId } = route.params
 const nodeId = ref(rawNodeId)
@@ -49,7 +42,7 @@ function generate(node: Node, id: Record<number | string, Node>) {
         if (nodeName.value && !parentNode.name.toLocaleLowerCase().includes(nodeName.value.toLocaleLowerCase())) {
           continue
         }
-        if (filterNative.value === '1' && nativeNode.includes(parentNode.nt)) {
+        if (Number(filterNative.value) === 1 && nativeNode.includes(parentNode.nt)) {
           continue
         }
         if (!pathStore[parentId]) pathStore[parentId] = []
@@ -81,8 +74,8 @@ function generate(node: Node, id: Record<number | string, Node>) {
         if (nodeName.value && !childNode.name.toLocaleLowerCase().includes(nodeName.value.toLocaleLowerCase())) {
           continue
         }
-        
-        if (filterNative.value === '1' && nativeNode.includes(childNode.nt)) {
+
+        if (Number(filterNative.value) === 1 && nativeNode.includes(childNode.nt)) {
           continue
         }
         if (!pathStore[node.id]) pathStore[node.id] = []
@@ -169,8 +162,8 @@ const render = (nodes: Node[]) => {
         data: data as any,
         edgeSymbol: ['none', 'arrow'],
         edges: links as any,
-        label: label as any,
-        force: force as any,
+        label: label.value,
+        force: force.value,
         roam: true,
         draggable: true
       },
