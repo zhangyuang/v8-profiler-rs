@@ -9,11 +9,11 @@ version = "1.0.6"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["console_error_panic_hook"]
+default = ["console_error_panic_hook", "wee_alloc"]
 
 [dependencies]
 rs-parse-snapshot = { path = "../parse"}
-wasm-bindgen = "0.2.63"
+wasm-bindgen = {version = "0.2.63"}
 js-sys = "^0.3.0"
 console_error_panic_hook = { version = "0.1.6", optional = true }
 wee_alloc = { version = "0.4.5", optional = true }

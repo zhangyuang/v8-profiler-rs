@@ -1,34 +1,5 @@
 pub mod snapshot {
-    // use wasm_bindgen::prelude::*;
-
-    // // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
-    // // allocator.
-    // #[cfg(feature = "wee_alloc")]
-    // #[global_allocator]
-    // static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
-    // #[wasm_bindgen]
-    // extern "C" {
-    //     // Use `js_namespace` here to bind `console.log(..)` instead of just
-    //     // `log(..)`
-    //     #[wasm_bindgen(js_namespace = console)]
-    //     fn log(s: &str);
-
-    //     // The `console.log` is quite polymorphic, so we can bind it with multiple
-    //     // signatures. Note that we need to use `js_name` to ensure we always call
-    //     // `log` in JS.
-    //     #[wasm_bindgen(js_namespace = console, js_name = log)]
-    //     fn log_u32(a: u32);
-
-    //     // Multiple arguments too!
-    //     #[wasm_bindgen(js_namespace = console, js_name = log)]
-    //     fn log_many(a: &str, b: &str);
-    // }
-    // macro_rules! console_log {
-    //   // Note that this is using the `log` function imported above during
-    //   // `bare_bones`
-    //   ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
-    // }
+    // use crate::console::console::;
     use crate::define::define::{
         Edge, EdgePropertyType, Heapsnapshot, JsValueType, Node, NodePropertyType, RcNode,
         EDGE_FIELDS, EDGE_OTHERS_PROPERTY, EDGE_TYPES_PROPERTY, NODE_OTHERS_PROPERTY,
@@ -43,6 +14,8 @@ pub mod snapshot {
     use yuuang_dominators::graph::{DiGraph, NodeIndex};
     use yuuang_dominators::Graph;
     pub fn parse_snapshot(path: &str) -> Vec<RcNode> {
+        // #[cfg(target_arch = "wasm32")]
+        // console_log!();
         let now = Local::now().timestamp_millis();
         let mut graph = DiGraph::<usize, usize>::new();
 
@@ -71,7 +44,10 @@ pub mod snapshot {
         mark_retainer(node_struct_arr_mut, &mut flags, &id_to_ordinal, graph_mut);
 
         let (doms, post_order) = simple_fast(&graph, NodeIndex::new(0));
-
+        let mut retained_size = vec![0; node_struct_arr_mut.len()];
+        for (index, node) in node_struct_arr_mut.iter().enumerate() {
+            retained_size[index] = usize::from(&node.borrow().size);
+        }
         for post_order_index in post_order {
             let node_ordinal = post_order_index.index();
             if node_ordinal != 0 {
@@ -79,14 +55,22 @@ pub mod snapshot {
                 let mut dominator_node = node_struct_arr[dominator].borrow_mut();
                 let be_dominator_node = node_struct_arr[node_ordinal].borrow_mut();
                 dominator_node.rs += be_dominator_node.rs;
+                retained_size[dominator] += retained_size[node_ordinal];
             }
         }
+        println!("{:?}", retained_size);
 
         println!(
             "calculate retainedsize spend {}ms",
             Local::now().timestamp_millis() - now
         );
         node_struct_arr.sort_by(|a, b| b.borrow().rs.cmp(&a.borrow().rs));
+        // let user_root_ordinal = get_ordinal(&id_to_ordinal, user_root_id);
+        // let user_root_node = node_struct_arr[user_root_ordinal].clone();
+        // node_struct_arr.remove(user_root_ordinal);
+        // node_struct_arr.sort_by(|a, b| b.borrow().rs.cmp(&a.borrow().rs));
+        // // insert global/window node in index 1
+        // node_struct_arr.insert(1, user_root_node);
         node_struct_arr
     }
 
@@ -114,14 +98,14 @@ pub mod snapshot {
                     parents: vec![],
                 }));
                 let mut node_mut = node.borrow_mut();
-                // let mut name = String::from(&node_mut.name);
-                // node_mut.name = JsValueType::JsString(if name.len() > 50  {
-                //     let idx = find_char_boundary(name.as_str(), 50);
-                //     name.truncate(idx);
-                //     name
-                // } else {
-                //     name
-                // });
+                let mut name = String::from(&node_mut.name);
+                node_mut.name = JsValueType::JsString(if name.len() > 50 {
+                    let idx = find_char_boundary(name.as_str(), 50);
+                    name.truncate(idx);
+                    name
+                } else {
+                    name
+                });
                 id_to_ordinal.insert(usize::from(&node_mut.id), index);
                 node_mut.rs = usize::from(&node_mut.size);
                 graph.add_node(usize::from(&node_mut.id));
@@ -143,11 +127,11 @@ pub mod snapshot {
                     let edge_start = edge_index * EDGE_FIELDS.len();
                     let edge_type = get_edgs_property(edge_start, 0, &snapshot);
                     let is_weak_retainer = String::from(&edge_type) == String::from("weak");
-                    let mut edge = Edge {
+                    let edge = Edge {
                         et: edge_type,
                         ni: get_edgs_property(edge_start, 1, &snapshot),
                         tn: get_edgs_property(edge_start, 2, &snapshot),
-                        isw: if is_weak_retainer {1} else {0},
+                        isw: if is_weak_retainer { 1 } else { 0 },
                         isr: 1,
                     };
                     let to_node_id = usize::from(&edge.tn);
@@ -168,30 +152,6 @@ pub mod snapshot {
         );
         (node_struct_arr, id_to_ordinal)
     }
-    fn get_all_retainer_node(
-        immdiately_node_dominator: &HashMap<usize, Vec<usize>>,
-        node_id: usize,
-        has_visited_map: &mut HashMap<usize, bool>,
-    ) -> Vec<usize> {
-        let mut queue = vec![];
-        if immdiately_node_dominator.get(&node_id).is_none() {
-            return queue;
-        }
-        let immediately_nodes = immdiately_node_dominator.get(&node_id).unwrap();
-        for node in immediately_nodes {
-            let node = *node as usize;
-            if has_visited_map.get(&node).is_none() {
-                queue.push(node);
-                has_visited_map.insert(node, true);
-                queue.append(&mut get_all_retainer_node(
-                    immdiately_node_dominator,
-                    node,
-                    has_visited_map,
-                ));
-            }
-        }
-        return queue;
-    }
     fn mark_page_own_node(
         user_root_id: usize,
         node_struct_arr: &mut Vec<Rc<RefCell<Node>>>,
@@ -200,8 +160,8 @@ pub mod snapshot {
     ) {
         let user_root = &node_struct_arr[get_ordinal(id_to_ordinal, user_root_id)];
         let mut has_visited_map = HashMap::new();
-        let mut queue:Vec<usize> = vec![usize::from(&user_root.borrow().id)];
-        while queue.len() !=0 {
+        let mut queue: Vec<usize> = vec![usize::from(&user_root.borrow().id)];
+        while queue.len() != 0 {
             let node_id = queue.pop().unwrap();
             if has_visited_map.get(&node_id).is_some() {
                 continue;
@@ -210,12 +170,9 @@ pub mod snapshot {
             let node = &node_struct_arr[get_ordinal(id_to_ordinal, node_id)].borrow();
             for edge in &node.edges {
                 let to_node_id = usize::from(&edge.tn);
-                if to_node_id != node_id {
-                    if edge.isw == 0 {
-                        flags[get_ordinal(id_to_ordinal, to_node_id)] = 1;
-                    }
-                    let to_node =&node_struct_arr[get_ordinal(id_to_ordinal, to_node_id)];
-                    queue.push(usize::from(&to_node.borrow().id))
+                if to_node_id != node_id  && edge.isw == 0 {
+                    flags[get_ordinal(id_to_ordinal, to_node_id)] = 1; 
+                    queue.push(to_node_id);
                 }
             }
         }
@@ -307,12 +264,12 @@ pub mod snapshot {
         if s.len() <= index {
             return index;
         }
-        
+
         let mut new_index = index;
         while !s.is_char_boundary(new_index) {
             new_index += 1;
         }
-        
+
         new_index
     }
     pub fn get_node_property(

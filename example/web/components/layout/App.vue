@@ -185,6 +185,7 @@ const tooltip: TooltipComponentOption = {
   formatter: (params: any) => {
     const { data } = params
     if (!data.id) {
+      if (!data.lineStyle) return
       return `<div class="tooltipText">
       <div class="item">
         <div class="name">边类型:  </div>

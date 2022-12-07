@@ -11,7 +11,7 @@ import type { EChartsOption, GraphSeriesOption } from 'echarts'
 import { useSnapShotStore } from '@/store'
 import './index.less'
 import type { Node } from '@/type'
-import { nativeNode } from '@/utils'
+import { getColor } from '@/utils'
 
 const store = useSnapShotStore()
 const router = useRouter()
@@ -46,17 +46,23 @@ const render = (snapshort: Node[]) => {
       id: String(node.id),
       name: String(node.name),
       value: node.rs,
-      symbolSize: Number(nodeSize.value) + index * 2,
+      symbolSize: Number(nodeSize.value) + index * 1,
       itemStyle: {
         // @ts-expect-error
         type: node.node_type,
         self_size: node.size,
         edges: node.edges,
-        color: nativeNode.includes(node.nt) ? 'black' : `#4187f2`
+        color: getColor(node, index, maxNodes.value)
       }
     })
-
   })
+  const links = sortNodes.map((node, index) => {
+    return {
+      source: index,
+      target: index + 1
+    }
+  })
+  links.pop()
   const chartDom = document.getElementById('main')!
   const myChart = echarts.init(chartDom)
   const option: EChartsOption = {
@@ -66,10 +72,12 @@ const render = (snapshort: Node[]) => {
         type: 'graph',
         layout: 'force',
         data: nodes,
+        edges: links as any,
+        edgeSymbol: ['arrow', 'none'],
         label: label as any,
         force: force as any,
-        // roam: true,
-        // draggable: true,
+        roam: true,
+        draggable: true,
       }
     ]
   }

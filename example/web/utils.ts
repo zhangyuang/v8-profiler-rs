@@ -1,3 +1,4 @@
+import type { Node } from './type'
 export const noRepeat = (arr: number[]) => Array.from(new Set(arr))
 
 export enum NodeType {
@@ -20,4 +21,14 @@ export enum NodeType {
   // "hidden classes") of JS objects.
 }
 
-export const nativeNode:string[] = [NodeType.kHidden, NodeType.kSynthetic] as string[]
+export const nativeNode: string[] = [NodeType.kHidden, NodeType.kSynthetic] as string[]
+
+export const getColor = (node: Node, index: string | number, maxNodes: string | number) => {
+  if (nativeNode.includes(node.nt)) {
+    return 'black'
+  } if (Number(index) === Number(maxNodes) - 2) {
+    return 'red'
+  } else {
+    return '#4187f2'
+  }
+}
