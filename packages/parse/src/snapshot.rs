@@ -58,7 +58,6 @@ pub mod snapshot {
                 retained_size[dominator] += retained_size[node_ordinal];
             }
         }
-        println!("{:?}", retained_size);
 
         println!(
             "calculate retainedsize spend {}ms",
