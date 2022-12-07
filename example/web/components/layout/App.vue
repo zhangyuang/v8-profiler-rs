@@ -77,7 +77,10 @@ const renderOptions = reactive({
   parseMethod: 'wasm',
   tooltip: {},
   force: {},
-  label: {}
+  label: {},
+  compare: {
+    addtionalIndex: -1
+  }
 } as RenderOptions)
 defineExpose({
   renderOptions
@@ -126,7 +129,7 @@ const upload = async (e: any) => {
     setTimeout(async () => {
       const bigRes = await parse(big)
       const [additionalNode, biggerNode] = await parseMultiply([smallRes, bigRes])
-      console.log(additionalNode, biggerNode)
+      renderOptions.compare.addtionalIndex = additionalNode.length
       store.setData({
         data: additionalNode.concat(biggerNode)
       })

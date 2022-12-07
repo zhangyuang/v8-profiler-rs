@@ -154,7 +154,7 @@ const render = (nodes: Node[]) => {
 
   const [data, links] = generate(node, id)
   const option: EChartsOption = {
-    tooltip: tooltip as any,
+    tooltip: tooltip.value,
     series: [
       {
         type: 'graph',

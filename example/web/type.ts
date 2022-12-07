@@ -48,5 +48,8 @@ export type RenderOptions = {
   parseMethod: 'wasm' | 'http',
   tooltip: {},
   force: {},
-  label: {};
+  label: {},
+  compare: {
+    addtionalIndex: number
+  }
 }

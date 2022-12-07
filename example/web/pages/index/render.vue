@@ -38,6 +38,7 @@ const render = (snapshort: Node[]) => {
     })
     return
   }
+
   sortNodes.forEach((node, index) => {
     nodes.push({
       id: String(node.id),
@@ -54,17 +55,18 @@ const render = (snapshort: Node[]) => {
       }
     })
   })
-  const links = sortNodes.map((node, index) => {
+  const links = sortNodes.map((_, index) => {
     return {
       source: index,
       target: index + 1
     }
   })
   links.pop()
+
   const chartDom = document.getElementById('main')!
   const myChart = echarts.init(chartDom)
   const option: EChartsOption = {
-    tooltip: tooltip as any,
+    tooltip: tooltip.value,
     series: [
       {
         type: 'graph',
