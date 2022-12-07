@@ -98,8 +98,8 @@ pub mod snapshot {
                 }));
                 let mut node_mut = node.borrow_mut();
                 let mut name = String::from(&node_mut.name);
-                node_mut.name = JsValueType::JsString(if name.len() > 50 {
-                    let idx = find_char_boundary(name.as_str(), 50);
+                node_mut.name = JsValueType::JsString(if name.len() > 500 {
+                    let idx = find_char_boundary(name.as_str(), 500);
                     name.truncate(idx);
                     name
                 } else {
