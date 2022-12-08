@@ -111,7 +111,11 @@ watch(router.currentRoute, (to) => {
 const idOrdinal: Record<number | string, number> = {}
 
 const defaultDemo = async () => {
-  await parse(defaultDemoStr)
+  const parseResult = await parse(defaultDemoStr)
+  parseResult.forEach((item, index) => {
+    idOrdinal[item.id] = index
+  })
+  confirm()
 }
 const upload = async (e: any) => {
   //@ts-expect-error
@@ -131,6 +135,9 @@ const upload = async (e: any) => {
     const [additionalNode, biggerNode] = await parseMultiply([smallRes, bigRes])
     compare.value.is = true
     compare.value.addtionalIndex = additionalNode.length
+    bigRes.forEach((item, index) => {
+      idOrdinal[item.id] = index
+    })
     store.setData({
       data: additionalNode.concat(biggerNode)
     })
@@ -139,6 +146,9 @@ const upload = async (e: any) => {
   }
   const result = await read(file[0])
   const parseResult = await parse(result)
+  parseResult.forEach((item, index) => {
+    idOrdinal[item.id] = index
+  })
   store.setData({
     data: parseResult
   })
@@ -177,7 +187,7 @@ const parseMultiply = (arr: Array<Node[]>) => {
       }
     }
   }
-  return [additionalNode.sort(sortByRs).slice(0, Math.ceil(renderOptions.maxNodes / 2)), biggerNode.sort(sortByRs).slice(0, Math.ceil(renderOptions.maxNodes / 2))]
+  return [additionalNode, biggerNode]
 }
 
 const parse = async (result: string): Promise<Node[]> => {
@@ -203,9 +213,6 @@ const parse = async (result: string): Promise<Node[]> => {
       parseResult = res.data
     }
     store.setLoading('finish')
-    parseResult.forEach((item, index) => {
-      idOrdinal[item.id] = index
-    })
     return parseResult
   } catch (error) {
     console.log(error)
@@ -236,7 +243,7 @@ const byteToMb = (byte: number | string) => {
   return (val / oneMb).toFixed(2) + 'Mb'
 }
 const getNodeById = (nodeId: number) => {
- return store.data[idOrdinal[nodeId]]
+  return store.data[idOrdinal[nodeId]]
 }
 renderOptions.tooltip = {
   trigger: 'item',
@@ -268,7 +275,7 @@ renderOptions.tooltip = {
         }
       }
     }
-    const { compareType,biggerNumber } = data.itemStyle
+    const { compareType, biggerNumber } = data.itemStyle
     return `<div class="tooltipText">
       ${compareType ? ` <div class="item red">
         <div class="name">比较类型: ${compareType === 'addtional' ? '新增节点' : '可GC大小增大节点'} </div>
@@ -349,6 +356,7 @@ provide('renderOptions', renderOptions)
   .title {
     color: rgba(0, 0green, 0, .5);
     margin-bottom: 20px;
+    margin-top: 20px;
   }
 
   .inputFile {

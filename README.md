@@ -114,7 +114,7 @@ export enum NodeType {
 
 ### 代码实战
 
-以下列经典的内存泄漏代码为例子，下面来讲述如何运用本工具来发现内存泄漏
+以下列经典的内存泄漏代码为例子，下面来讲述如何运用本工具来发现内存泄漏。
 
 ```js
 const express = require('express');
@@ -177,11 +177,9 @@ isolate->GetHeapProfiler()->TakeHeapSnapshot(Nan:: EmptyString());
 
 在 [在线工具](https://v8.ssr-fc.com/) 中，我们可以通过选择本地文件进行上传。或者如果你想体验本工具的能力。我们已经默认内置了上述代码生成的内存快照进行分析。
 
-点击左侧查看默认示例，我们将会通过上述代码的内存快照来生成图示。目前的计算时间根据内存快照的大小，大概需要 `3s` 左右的时间，目前的算法还有一些可以优化的空间，我们将会在之后的版本中不断的优化性能。
+点击左侧查看默认示例，我们将会通过上述代码的内存快照来生成图示。目前的计算时间根据内存快照的大小，原生的 `Rust` 代码大概需要运行 `0-6s` 经过 `Webassembly`的损耗后大概需要 `3-20s` 左右的时间，目前的算法还有一些可以优化的空间，我们将会在之后的版本中不断的优化性能。
 
-![](https://res.wx.qq.com/shop/public/d4676114-a1c9-4c36-9d5f-5df7bb57b4e2.png)
-
-我们在左侧提供了控制面板，提供了诸多控制图表绘制参数的控制能力，通过控制面板我们可以轻松的过滤无关信息来获取想要的信息同时可以获得流畅的绘制性能。
+在控制面板中我们提供了诸多控制图表绘制参数的控制能力，通过这些功能我们可以轻松的过滤无关信息来获取想要的信息同时可以获得流畅的绘制性能。
 
 ### 排列节点
 
@@ -189,16 +187,16 @@ isolate->GetHeapProfiler()->TakeHeapSnapshot(Nan:: EmptyString());
 
 在上面我们提到了，容易发生内存泄露的节点往往是那些 `Retained Size` 很大的节点。所以我们默认按照 `Retained Size` 通过箭头的顺序 `从大到小` 排列。选取前 `50(数量可修改)`个节点进行展示。
 
-![](https://res.wx.qq.com/shop/public/ffcb9671-ba3f-40d5-a8f2-8561666d361f.png)
+![](https://res.wx.qq.com/shop/public/7302809c-d577-4d4b-907e-9f055365afb1.png)
 
-当鼠标 hover 到节点时，我们将会展示节点的详细信息包括 `节点id`、`节点名称`、`节点大小`、`节点可被回收大小`、`节点源码位置(如有)`
+当鼠标 hover 到节点时，我们将会展示节点的详细信息包括 `节点id`、`节点名称`、`节点大小`、`节点可被回收大小`、`节点源码位置(如能找到)`
 
 
 节点面积越大，代表可被回收的大小越大
 
 一般面积最大的节点都是各种 `GC` 根节点。这些节点的类型是 `Synthetic` 一般是 `C++` 层代码合成的，一般无需特别关注。这里用`黑色节点`表示，我们在关注图表时，将优先关注 `蓝色节点`。我们之后将提供更加精确的筛选手段。
 
-通过图表我们可以看到在业务节点中最大的节点名是 `someMethod` 的节点，并且存在了很多个。这时候我们点击节点，将会展示其的具体引用关系。
+通过图表我们可以看到在业务节点中最大的节点名是 `replceThing`，`someMethod` 的节点，并且`someMethod`节点存在了很多个。这时候我们点击节点，将会展示其的具体引用关系。
 
 ### 查看节点引用关系
 
@@ -218,9 +216,29 @@ isolate->GetHeapProfiler()->TakeHeapSnapshot(Nan:: EmptyString());
 
 ![](https://res.wx.qq.com/shop/public/fd065136-9189-4844-97ba-a650fec16427.png)
 
-至此，我们完成了一次完整的内存泄漏分析过程。其他场景的内存泄漏分析欢迎各位开发者自行动手发掘。
+## 快照对比
 
-在之后我们也会补充更加复杂的场景该如何去分析。控制面板的功能也会不断的进行完善。
+通过快照对比我们可以迅速找到在两次快照中被创建的新节点，以及相同节点但是可GC大小增大的节点。这些节点往往代表着内存泄漏。
+
+同时上传 `small-closure.heapsnahshot` 和 `big-closure.heapsnahshot`
+
+![](https://res.wx.qq.com/shop/public/a5f3ad4e-c616-4518-9d53-5258a7e74874.png)
+
+默认的对比方式是`新增节点`。同样我们将会按照 `retained_size` 的大小，从大到小排列新增节点。可以看到新增的节点中与业务相关的节点，多了很多 `someMethod` 节点。
+
+为了更好的看到占用内存增大的节点，这时候我们上传 `medium-closure.heapsnahshot` 和 `big-closure.heapsnahshot`
+
+将对比类型改为 `增长节点` 并点击重新绘制
+
+![](https://res.wx.qq.com/shop/public/99d44ecf-b531-4ea6-90f7-86a9d960da88.png)
+
+此时，我们将会比较相同的节点，在两次快照中，可被 GC 回收大小的增长。并按照大小排列。
+
+可以看到 `replaceThing` 这个业务代码中的节点，在请求次数从 `40` 次到 `50`次的时候可GC大小增长了 `76MB`，存在内存泄漏的可能。
+
+至此，我们的一次分析内存泄漏的过程就完成了。可以看到简单的内存泄漏，我们只需要上传一次快照文件就可以基本定位泄露位置。复杂的内存泄漏情况我们可以通过上传前后两次快照的对比来找到变动的节点。
+
+我们将会在之后持续优化性能以及增加新的分析能力，敬请期待。欢迎 Star ✨
 
 ## 自定义能力分析
 
@@ -237,7 +255,7 @@ import {
     parse_v8_snapshot
 } from 'v8-profiler-rs/v8_profiler_rs'
 
-const snapshot: Node[] = parse_v8_snapshot(heapsnapshot as string)
+const snapshot = parse_v8_snapshot(heapsnapshot as string)
 ```
 
 ### In Browser
@@ -253,7 +271,7 @@ $ npm i v8-profiler-rs-web
     } from 'v8-profiler-rs-web'
 
     init().then(() => {
-        const snapshot: Node[] = parse_v8_snapshot(heapsnapshot as string)
+        const snapshot = parse_v8_snapshot(heapsnapshot as string)
     })
 </script>
 ```
@@ -268,5 +286,6 @@ $ npm i v8-profiler-rs-node
 const {
     parse_v8_snapshot
 } = require('v8-profiler-rs-node')
-const snapshot: Node[] = parse_v8_snapshot(heapsnapshot as string)
+const snapshot = parse_v8_snapshot(heapsnapshot as string)
 ```
+### 
