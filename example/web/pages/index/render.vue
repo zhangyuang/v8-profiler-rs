@@ -47,11 +47,12 @@ const render = (snapshort: Node[]) => {
       symbolSize: Number(nodeSize.value) + index * 1,
       itemStyle: {
         // @ts-expect-error
-        type: node.node_type,
+        type: node.nt,
         self_size: node.size,
         edges: node.edges,
         color: getColor(node, index, maxNodes.value),
-        compareType: node.compareType
+        compareType: node.compareType,
+        biggerNumber: node.biggerNumber
       }
     })
   })

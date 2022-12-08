@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-
+const fs = require('fs')
 //以下是产生泄漏的代码
 let theThing = null;
 let replaceThing = function () {
@@ -24,10 +24,17 @@ let index = 0
 app.get('/leak', function closureLeak(req, res, next) {
   replaceThing();
   index++
+  if (index === 1) {
+    const stream = require('v8').getHeapSnapshot()
+    stream.pipe(fs.createWriteStream('small-closure.heapsnapshot'))
+  }
+  if (index === 40) {
+    const stream = require('v8').getHeapSnapshot()
+    stream.pipe(fs.createWriteStream('medium-closure.heapsnapshot'))
+  }
   if (index === 50) {
     const stream = require('v8').getHeapSnapshot()
-    const fs = require('fs')
-    stream.pipe(fs.createWriteStream('closure.heapsnapshot'))
+    stream.pipe(fs.createWriteStream('big-closure.heapsnapshot'))
   }
   res.send('Hello Node');
 });

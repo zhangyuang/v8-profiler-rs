@@ -32,3 +32,14 @@ export const getColor = (node: Node, index: string | number, maxNodes: string | 
 }
 
 export const sortByRs = (a:Node, b:Node) => b.rs - a.rs
+
+export const parseOptions = [
+  { text: '解析方式', value: 'wasm' },
+  { text: 'wasm', value: 'wasm' },
+  { text: 'http', value: 'http' },
+];
+export const compareOptions = [
+  { text: '比较方式', value: 'addtional' },
+  { text: '新增节点', value: 'addtional' },
+  { text: '增长节点', value: 'bigger' },
+];

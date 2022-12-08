@@ -32,6 +32,7 @@ export type Node = {
   }[];
   compareType?: string
   parents: number[];
+  biggerNumber?: number
 }
 export type RenderOptions = {
   isIndex: boolean;
@@ -50,6 +51,8 @@ export type RenderOptions = {
   force: {},
   label: {},
   compare: {
+    is: boolean
+    mode: 'addtional' | 'bigger'
     addtionalIndex: number
   }
 }

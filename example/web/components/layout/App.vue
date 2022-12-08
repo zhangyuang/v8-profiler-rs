@@ -18,12 +18,14 @@
           <Field class="field" v-model="filterNative" label="过滤原生节点"></Field>
         </template>
         <DropdownMenu class="field">
-          <DropdownItem class="field" v-model="parseMethod" :options="option" />
+          <DropdownItem class="field" v-model="parseMethod" :options="parseOptions" />
+        </DropdownMenu>
+        <DropdownMenu class="field" v-if="compare.is">
+          <DropdownItem class="field" v-model="compare.mode" :options="compareOptions" />
         </DropdownMenu>
         <input type="file" @change="upload" ref="fileRef" accept=".heapsnapshot" class="inputFile" multiple="true">
         <Button type="primary" class="btn" @click="fileRef.click()" v-if="store.loaded !== 'finish'">上传文件</Button>
         <Button type="primary" class="btn" @click="confirm">重新绘制</Button>
-        <!-- <Button type="primary" class="btn" @click="show">查看序列化数据</Button> -->
         <Button type="primary" class="btn" @click="handbook">使用手册</Button>
         <Button type="primary" class="btn" @click="toRepo">代码仓库(欢迎 Star✨)</Button>
         <Button type="primary" class="btn" @click="defaultDemo" v-if="store.loaded === 'null'">查看默认示例</Button>
@@ -31,11 +33,10 @@
       <div class="chartContainer">
         <div class="loadingContainer" v-if="store.loaded === 'loading'">
           <Loading color="#5b92f8" size="50" v-if="parseMethod !== 'wasm'"></Loading>
-          <div class="text" v-if="parseMethod == 'wasm'">使用 Webassembly 解析文件中这大概需要
-            3-10s 左右的时间，请稍后...</div>
+          <div class="text" v-if="parseMethod == 'wasm'">使用 Webassembly 解析文件中根据文件大小这大概需要
+            3-20s 左右的时间，请稍后...</div>
           <div class="text" v-else>文件解析中这大概需要10s左右的时间，请稍后...</div>
         </div>
-
         <router-view v-slot="{ Component }">
           <component ref="children" :is="Component" />
         </router-view>
@@ -55,7 +56,7 @@ import { onlyCsr } from 'ssr-hoc-vue3'
 import axios from 'axios'
 import type { Node, RenderOptions } from '@/type'
 import { useSnapShotStore } from '@/store'
-import { sortByRs } from '@/utils'
+import { sortByRs, parseOptions, compareOptions } from '@/utils'
 const store = useSnapShotStore()
 const router = useRouter()
 const route = useRoute()
@@ -79,12 +80,16 @@ const renderOptions = reactive({
   force: {},
   label: {},
   compare: {
+    is: false,
+    mode: 'addtional',
     addtionalIndex: -1
   }
 } as RenderOptions)
-defineExpose({
-  renderOptions
-})
+
+const { maxNodes, isIndex, edgeCounts, parentDepth, childDepth,
+  nodeName, nodeId, filterNative, parseMethod, compare
+} = toRefs(renderOptions)
+
 renderOptions.label = {
   show: true,
   position: 'right',
@@ -92,11 +97,7 @@ renderOptions.label = {
     return (params.data.name?.length < 20 && params.data.name?.length > 0) ? params.data.name : params.data.id
   }
 }
-const option = [
-  { text: '解析方式', value: 'wasm' },
-  { text: 'wasm', value: 'wasm' },
-  { text: 'http', value: 'http' },
-];
+
 const defaultDemoStr = __isBrowser__ ? JSON.stringify(require('@/pages/index/closure.json')) : ''
 const toRepo = () => {
   window.open('https://github.com/zhangyuang/v8-profiler-rs')
@@ -126,15 +127,14 @@ const upload = async (e: any) => {
     file.sort((a, b) => a.size - b.size);
     const [small, big] = await Promise.all([read(file[0]), read(file[1])]);
     const smallRes = await parse(small)
-    setTimeout(async () => {
-      const bigRes = await parse(big)
-      const [additionalNode, biggerNode] = await parseMultiply([smallRes, bigRes])
-      renderOptions.compare.addtionalIndex = additionalNode.length
-      store.setData({
-        data: additionalNode.concat(biggerNode)
-      })
-      confirm()
-    }, 1000);
+    const bigRes = await parse(big)
+    const [additionalNode, biggerNode] = await parseMultiply([smallRes, bigRes])
+    compare.value.is = true
+    compare.value.addtionalIndex = additionalNode.length
+    store.setData({
+      data: additionalNode.concat(biggerNode)
+    })
+    confirm()
     return
   }
   const result = await read(file[0])
@@ -158,9 +158,9 @@ const parseMultiply = (arr: Array<Node[]>) => {
   const additionalNode: Node[] = []
   const biggerNode: Node[] = []
   const [smallRes, bigRes] = [arr[0], arr[1]];
-  const smallNodeMap: Record<number, Node> = {}
-  smallRes.forEach((smallNode, index) => {
-    smallNodeMap[index] = smallNode
+  const smallNodeMap: Record<number, number> = {}
+  smallRes.forEach((smallNode) => {
+    smallNodeMap[smallNode.id] = smallNode.rs
   })
   for (const bigNode of bigRes) {
     const { id: bigNodeId } = bigNode
@@ -170,8 +170,9 @@ const parseMultiply = (arr: Array<Node[]>) => {
       additionalNode.push(bigNode)
     } else {
       // 相同 id 的节点 retained_size 发生变化的
-      if (bigNode.rs > smallNodeMap[bigNodeId].rs) {
+      if (bigNode.rs > smallNodeMap[bigNodeId]) {
         bigNode.compareType = 'bigger'
+        bigNode.biggerNumber = bigNode.rs - smallNodeMap[bigNodeId]
         biggerNode.push(bigNode)
       }
     }
@@ -264,10 +265,14 @@ renderOptions.tooltip = {
         }
       }
     }
-    const { compareType } = data.itemStyle
+    const { compareType,biggerNumber } = data.itemStyle
     return `<div class="tooltipText">
-      ${compareType ? ` <div class="item">
+      ${compareType ? ` <div class="item red">
         <div class="name">比较类型: ${compareType === 'addtional' ? '新增节点' : '可GC大小增大节点'} </div>
+      </div>` : ''
+      }
+      ${biggerNumber ? ` <div class="item red">
+        <div class="name red">可GC大小增长: ${unitConvert(biggerNumber)} </div>
       </div>` : ''
       }
       <div class="item">
@@ -310,14 +315,17 @@ renderOptions.force = {
 const children = ref()
 const confirm = () => {
   console.log('renderOptions', renderOptions)
-  children.value.render(store.data)
+  if (compare.value.is) {
+    const { addtionalIndex, mode } = compare.value
+    children.value.render(mode === 'addtional' ? store.data.slice(0, addtionalIndex) : store.data.slice(addtionalIndex))
+  } else {
+    children.value.render(store.data)
+  }
 }
 
 provide('renderOptions', renderOptions)
 
-const { maxNodes, isIndex, edgeCounts, parentDepth, childDepth,
-  nodeName, nodeId, filterNative, parseMethod,
-} = toRefs(renderOptions)
+
 </script>
 
 <style lang="less">
@@ -329,12 +337,9 @@ const { maxNodes, isIndex, edgeCounts, parentDepth, childDepth,
 
   .board {
     display: flex;
-    padding: 20px 20px;
-
     flex-direction: column;
     align-items: center;
     background-color: #eee;
-    min-width: 200px;
     box-sizing: border-box;
   }
 
@@ -349,7 +354,8 @@ const { maxNodes, isIndex, edgeCounts, parentDepth, childDepth,
   }
 
   .field {
-    width: 100%;
+    width: 220px;
+    margin: 0 20px;
     margin-bottom: 20px;
   }
 
@@ -359,8 +365,7 @@ const { maxNodes, isIndex, edgeCounts, parentDepth, childDepth,
   }
 
   .btn {
-    width: 100%;
-    margin-bottom: 20px;
+    .field;
   }
 
   .relative {
