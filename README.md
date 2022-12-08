@@ -6,11 +6,23 @@
 
 我们部署了一个[在线网站](https://v8.ssr-fc.com/)可以实时上传 `V8` 内存快照结果并分析
 
-<!-- ## 解析方式
+## 已实现的功能
 
-我们提供了可以直接在浏览器运行的 [Webassembly](#自定义能力分析)编译版本可以独立使用，同时也提供了 `Http` 服务。区别在于 `Webassembly` 版本底层算法是用单线程实现，而 `Http` 服务底层是用多线程实现算法。默认的在线网站中我们使用 `Http` 服务进行内容解析，我们将会在之后的版本中提供 `Webassembly` 的多线程实现方案。
+🚀 表示已经实现的功能
 
-目前默认的 `Http` 解析方案耗时在 `1-10s` 左右， `Wasm` 版本的方案解析时间在 `5-20s` 左右。我们将会在之后的版本中不断优化这一性能。 -->
+| 里程碑                                                                                                                                                                                                                                          | 状态 |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 解析V8快照生成完善的节点信息                                                                                                                                         | 🚀    |
+| 提供 Webassembly 和 Rust Http 两种调用方式                                                                                                                                                | 🚀    |
+| 支持前端可视化能力                                                                                                                                                                                                           | 🚀    |
+|支持根据节点 id 和节点名称筛节点选                                                                                                                                                                                                                 | 🚀    |
+| 支持筛选节点数量                                                                                                                                       支持查看具体节点的详细引用关系                            | 🚀    |
+|  支持查看节点对应的源码位置                                                                                                                                | 🚀    |
+| 支持筛选节点的引用深度和过滤引用个数                                                                                                                                                                                         | 🚀    |
+| 支持对比两个快照文件                                                                                                                                                              | 🚀    |
+| 支持两种对比类型筛选新增节点/筛选GC大小增大节点      | 🚀    |
+
+
 
 ## 前置知识
 
@@ -52,7 +64,7 @@
 
 ```rust
 pub enum JsValueType {
-    // 定义可能会用到的  JS 类型，可能有 String 和 Number 两种类型
+    // 在 Rust 中表示  JS 类型，可能有 String 和 Number 两种类型
     JsString(String),
     JsNumber(usize),
 }
@@ -62,7 +74,6 @@ pub struct Node {
     pub id: JsValueType, // 节点 id
     pub self_size: JsValueType, // 节点自身大小
     pub edge_count: JsValueType, // 节点的子节点数量
-    pub trace_node_id: JsValueType, // 可忽略
     pub retained_size: Option<usize>, // 节点被 GC 后可完全释放的大小
     pub edges: Vec<Edge>, // 节点的子节点
     pub parents: Vec<usize>, // 节点的父节点
@@ -103,41 +114,51 @@ export enum NodeType {
 
 ### 代码实战
 
-以下列内存泄漏代码为例子，下面来讲述如何运用本工具来发现内存泄漏
+以下列经典的内存泄漏代码为例子，下面来讲述如何运用本工具来发现内存泄漏
 
 ```js
 const express = require('express');
 const app = express();
-
+const fs = require('fs')
 //以下是产生泄漏的代码
 let theThing = null;
-let replaceThing = function() {
-    let leak = theThing;
-    let unused = function() {
-        if (leak)
-            console.log("hi")
-    };
+let replaceThing = function () {
+  let leak = theThing;
+  let unused = function () {
+    if (leak)
+      console.log("hi")
+  };
 
-    // 不断修改theThing的引用
-    theThing = {
-        bigNumber: 1,
-        bigArr: [],
-        longStr: new Array(1000000),
-        someMethod: function() {
-            console.log('a');
-        }
-    };
+  // 不断修改theThing的引用
+  theThing = {
+    bigNumber: 1,
+    bigArr: [],
+    longStr: new Array(1000000),
+    someMethod: function () {
+      console.log('a');
+    }
+  };
 };
 let index = 0
 app.get('/leak', function closureLeak(req, res, next) {
-    replaceThing();
-    index++
-    if (index === 50) {
-        const stream = require('v8').getHeapSnapshot()
-        const fs = require('fs')
-        stream.pipe(fs.createWriteStream('closure.heapsnapshot'))
-    }
-    res.send('Hello Node');
+  replaceThing();
+  index++
+  if (index === 1) {
+    // 生成初始态快照
+    const stream = require('v8').getHeapSnapshot()
+    stream.pipe(fs.createWriteStream('small-closure.heapsnapshot'))
+  }
+  if (index === 40) {
+     // 生成中间态快照
+    const stream = require('v8').getHeapSnapshot()
+    stream.pipe(fs.createWriteStream('medium-closure.heapsnapshot'))
+  }
+  if (index === 50) {
+    // 生成最终态快照
+    const stream = require('v8').getHeapSnapshot()
+    stream.pipe(fs.createWriteStream('big-closure.heapsnapshot'))
+  }
+  res.send('Hello');
 });
 
 app.listen(3001);
@@ -145,7 +166,7 @@ app.listen(3001);
 
 ### 生成 heapsnapshot 文件
 
-如何生成 `heapsnapshot` 文件，在 `Node.js >= 11.13.0` 中我们可以直接通过内置的 `V8` 模块来生成。在老版本的 `Node.js` 中我们也可以通过 [heapdump](https://www.npmjs.com/package/heapdump) [v8-profiler-next](https://www.npmjs.com/package/v8-profiler-next) 来生成。本质都是调用了 `Node.js` 的 `V8 C++` 代码 来生成内存快照。我们在之后也会提供 `Rust binding` 来访问 `V8 API` 来实现更多丰富的能力。
+如何生成 `heapsnapshot` 文件，在 `Node.js >= 11.13.0` 中我们可以直接通过内置的 `V8` 模块来生成。在老版本的 `Node.js` 中我们也可以通过 [heapdump](https://www.npmjs.com/package/heapdump)或 [v8-profiler-next](https://www.npmjs.com/package/v8-profiler-next) 来生成。本质都是调用了 `Node.js` 的 `V8 C++` 代码 来生成内存快照。我们在之后也会提供 `Rust binding` 来访问 `V8 API` 来实现更多丰富的能力。
 
 ```c++
 isolate->GetHeapProfiler()->TakeHeapSnapshot(Nan:: EmptyString()); 
@@ -164,15 +185,18 @@ isolate->GetHeapProfiler()->TakeHeapSnapshot(Nan:: EmptyString());
 
 ### 排列节点
 
-在上面我们提到了，容易发生内存泄露的节点往往是那些 `Retained Size` 很大的节点。所以我们默认按照 `Retained Size` 从大到小进行排列，选取前 `50(数量可修改)`个节点进行展示。
+通过上面的代码，我们生成了三个快照文件。首先上传 `big-closure.heapsnapshot` 进行分析。
+
+在上面我们提到了，容易发生内存泄露的节点往往是那些 `Retained Size` 很大的节点。所以我们默认按照 `Retained Size` 通过箭头的顺序 `从大到小` 排列。选取前 `50(数量可修改)`个节点进行展示。
+
+![](https://res.wx.qq.com/shop/public/ffcb9671-ba3f-40d5-a8f2-8561666d361f.png)
 
 当鼠标 hover 到节点时，我们将会展示节点的详细信息包括 `节点id`、`节点名称`、`节点大小`、`节点可被回收大小`、`节点源码位置(如有)`
 
-![](https://res.wx.qq.com/shop/public/efef39da-eedf-4c5d-84b7-ee0f0630a60c.pic_hd.jpg)
 
 节点面积越大，代表可被回收的大小越大
 
-一般面积最大的节点都是各种 `GC` 根节点。这些节点的类型是 `Synthetic` 一般是 `C++` 层代码合成的，与具体的业务 `Js` 代码逻辑无关，所以我们一般无需关注。这里用`黑色节点`表示，我们在关注图表时，将优先关注 `蓝色节点`。
+一般面积最大的节点都是各种 `GC` 根节点。这些节点的类型是 `Synthetic` 一般是 `C++` 层代码合成的，一般无需特别关注。这里用`黑色节点`表示，我们在关注图表时，将优先关注 `蓝色节点`。我们之后将提供更加精确的筛选手段。
 
 通过图表我们可以看到在业务节点中最大的节点名是 `someMethod` 的节点，并且存在了很多个。这时候我们点击节点，将会展示其的具体引用关系。
 

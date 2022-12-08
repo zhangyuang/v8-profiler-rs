@@ -108,7 +108,7 @@ const handbook = () => {
 watch(router.currentRoute, (to) => {
   renderOptions.isIndex = to.path === '/'
 })
-const id: Record<number | string, Node> = {}
+const idOrdinal: Record<number | string, number> = {}
 
 const defaultDemo = async () => {
   await parse(defaultDemoStr)
@@ -203,9 +203,9 @@ const parse = async (result: string): Promise<Node[]> => {
       parseResult = res.data
     }
     store.setLoading('finish')
-    for (const item of store.data) {
-      id[item.id] = item
-    }
+    parseResult.forEach((item, index) => {
+      idOrdinal[item.id] = index
+    })
     return parseResult
   } catch (error) {
     console.log(error)
@@ -235,6 +235,9 @@ const byteToMb = (byte: number | string) => {
   const val = Number(byte)
   return (val / oneMb).toFixed(2) + 'Mb'
 }
+const getNodeById = (nodeId: number) => {
+ return store.data[idOrdinal[nodeId]]
+}
 renderOptions.tooltip = {
   trigger: 'item',
   show: true,
@@ -257,11 +260,11 @@ renderOptions.tooltip = {
     const sharedEdge = edges.find(item => item.ni === 'shared')
     let source = ''
     if (sharedEdge) {
-      const sharedEdgeNode = id[sharedEdge?.tn]
+      const sharedEdgeNode = getNodeById(sharedEdge?.tn)
       if (sharedEdgeNode) {
         const edge = sharedEdgeNode.edges.find(item => item.ni === 'script_or_debug_info')
         if (edge) {
-          source = id[id[edge.tn]?.edges.find(item => item.ni === 'name')?.tn ?? Number.MAX_SAFE_INTEGER]?.name
+          source = getNodeById(getNodeById(edge.tn)?.edges.find(item => item.ni === 'name')?.tn ?? Number.MAX_SAFE_INTEGER)?.name
         }
       }
     }
