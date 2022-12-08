@@ -2,6 +2,7 @@ pub mod define {
     use serde::{Deserialize, Serialize};
     use std::cell::RefCell;
     use std::cmp::Ordering;
+    use std::collections::HashMap;
     use std::rc::Rc;
     use std::sync::{Arc, Mutex};
     pub const NODE_TYPES_PROPERTY: [&str; 14] = [
@@ -46,7 +47,7 @@ pub mod define {
     ];
     pub const EDGE_OTHERS_PROPERTY: [&str; 2] = ["string_or_number", "node"];
     pub const FORBIDDEN_EDGE_TYPE: [&str; 4] = ["weak", "internal", "invisible", "hidden"];
-
+    pub type ID_ORDINAL = Arc<Mutex<HashMap<usize, usize>>>;
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Meta {
       pub node_fields: Vec<String>,
