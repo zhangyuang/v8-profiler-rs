@@ -182,7 +182,7 @@ pub mod snapshot {
                 let node_id = usize::from(&node.id);
                 let edge_count = usize::from(&node.ec);
                 let edges = (0..edge_count)
-                .into_par_iter()
+                    .into_par_iter()
                     .map(|edge_index| {
                         let node_edge_index = edge_index_map.get(&node_index).unwrap();
                         let edge_start = (edge_index + node_edge_index) * EDGE_FIELDS.len();
@@ -211,6 +211,17 @@ pub mod snapshot {
             .iter()
             .map(|node| return Rc::new(RefCell::new(node.clone())))
             .collect();
+        // node_struct_arr.iter().for_each(|node| {
+        //     let node_id = usize::from(&node.borrow().id);
+        //     node.borrow().edges.iter().for_each(|edge| {
+        //         let to_node_id = usize::from(&edge.tn);
+        //         let to_node = &node_struct_arr[get_ordinal(&id_to_ordinal, to_node_id)];
+        //         if to_node_id != node_id {
+        //             to_node.borrow_mut().parents.push(node_id);
+        //         }
+        //     })
+        // });
+
         println!(
             "calculate edge spend {}ms",
             Local::now().timestamp_millis() - now
