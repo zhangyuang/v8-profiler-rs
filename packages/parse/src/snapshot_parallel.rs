@@ -33,6 +33,7 @@ pub mod snapshot {
         NODE_TYPES_PROPERTY,
     };
     use chrono::prelude::*;
+    use std::borrow::BorrowMut;
     use std::cell::RefCell;
     use std::collections::HashMap;
     use std::fs::read_to_string;
@@ -157,19 +158,29 @@ pub mod snapshot {
             node_struct_arr.len(),
             Local::now().timestamp_millis() - now
         );
-        let node_struct_arr_clone = node_struct_arr.clone();
-        // let node_struct_arr_mut = &mut node_struct_arr;
         let mut edge_index = 0; // 代表当前是第几个 edge
+        let mut edge_index_map = HashMap::new();
         node_struct_arr
-            .iter_mut()
+            .iter()
             .enumerate()
-            .for_each(|(_, node)| {
-                let node_id = usize::from(&node.id);
+            .for_each(|(index, node)| {
+                edge_index_map.insert(index, edge_index);
+                edge_index += usize::from(&node.ec);
+            });
+        node_struct_arr
+            // .iter_mut()
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(node_index, node)| {
+                // let mut node = node;
+                // let mut node = node.borrow_mut();
+                // let node_id = usize::from(&node.id);
                 let edge_count = usize::from(&node.ec);
                 let edges = (0..edge_count)
-                .into_par_iter()
-                    .map(|_| {
-                        let edge_start = edge_index * EDGE_FIELDS.len();
+                    // .into_par_iter()
+                    .map(|edge_index| {
+                        let edge_start_index = edge_index_map.get(&node_index).unwrap();
+                        let edge_start = (edge_index + edge_start_index) * EDGE_FIELDS.len();
                         let edge_type = get_edgs_property(edge_start, 0, &snapshot);
                         let is_weak_retainer = String::from(&edge_type) == String::from("weak");
                         let edge = Edge {
@@ -179,21 +190,21 @@ pub mod snapshot {
                             isw: if is_weak_retainer { 1 } else { 0 },
                             isr: 1,
                         };
-                        let to_node_id = usize::from(&edge.tn);
-                        let to_node = &node_struct_arr_clone[get_ordinal(&id_to_ordinal, to_node_id)];
+                        // let to_node_id = usize::from(&edge.tn);
+                        // let to_node = &node_struct_arr[get_ordinal(&id_to_ordinal, to_node_id)];
 
                         // if to_node_id != node_id {
-                        //     to_node.parents.push(usize::from(&node.id));
+                        //     to_node.borrow_mut().parents.push(usize::from(&node.id));
                         // }
-                        edge_index += 1;
                         edge
                     })
                     .collect();
                 node.edges = edges;
             });
-            let node_struct_arr =node_struct_arr.iter().map(|node| {
-                Rc::new(RefCell::new(node.clone()))
-            }).collect();
+        let node_struct_arr: Vec<RcNode> = node_struct_arr
+            .iter()
+            .map(|node| return Rc::new(RefCell::new(node.clone())))
+            .collect();
         println!(
             "calculate edge spend {}ms",
             Local::now().timestamp_millis() - now
@@ -203,6 +214,7 @@ pub mod snapshot {
             "calculate edge spend {}ms",
             Local::now().timestamp_millis() - now
         );
+
         (node_struct_arr, id_to_ordinal)
         // (vec![], HashMap::new())
     }
