@@ -25,7 +25,6 @@ pub mod snapshot {
     // `bare_bones`
     ($($t:tt)*) => (log(&format_args!($($t)*).to_string()))
     }
-    use rayon::prelude::*;
 
     use crate::define::define::{
         Edge, EdgePropertyType, Heapsnapshot, JsValueType, Node, NodePropertyType, RcNode,
