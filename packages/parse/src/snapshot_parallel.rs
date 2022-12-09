@@ -118,6 +118,7 @@ pub mod snapshot {
         let (snapshot, node_fields_len) = read_to_snapshot(path);
         let nodes = snapshot.snapshot.node_count;
         let mut node_struct_arr: Vec<Node> = (0..nodes)
+            .into_par_iter()
             .enumerate()
             .map(|(index, _)| {
                 let node_start = index * node_fields_len;
@@ -140,12 +141,17 @@ pub mod snapshot {
                 } else {
                     name
                 });
-                id_to_ordinal.insert(usize::from(&node.id), index);
                 node.rs = usize::from(&node.size);
-                graph.add_node(usize::from(&node.id));
                 node
             })
             .collect();
+        node_struct_arr
+            .iter()
+            .enumerate()
+            .for_each(|(index, node)| {
+                id_to_ordinal.insert(usize::from(&node.id), index);
+                graph.add_node(usize::from(&node.id));
+            });
         println!(
             "calculate {} nodes spend {}ms",
             node_struct_arr.len(),
@@ -176,6 +182,7 @@ pub mod snapshot {
                 let node_id = usize::from(&node.id);
                 let edge_count = usize::from(&node.ec);
                 let edges = (0..edge_count)
+                .into_par_iter()
                     .map(|edge_index| {
                         let node_edge_index = edge_index_map.get(&node_index).unwrap();
                         let edge_start = (edge_index + node_edge_index) * EDGE_FIELDS.len();
@@ -200,10 +207,10 @@ pub mod snapshot {
                     .collect();
                 node.edges = edges;
             });
-        // let node_struct_arr = node_struct_arr;
-            // .iter()
-            // .map(|node| return Rc::new(RefCell::new(node.clone())))
-            // .collect();
+        let node_struct_arr: Vec<RcNode> = node_struct_arr
+            .iter()
+            .map(|node| return Rc::new(RefCell::new(node.clone())))
+            .collect();
         println!(
             "calculate edge spend {}ms",
             Local::now().timestamp_millis() - now
@@ -214,8 +221,8 @@ pub mod snapshot {
             Local::now().timestamp_millis() - now
         );
 
-        // (node_struct_arr, id_to_ordinal)
-        (vec![], HashMap::new())
+        (node_struct_arr, id_to_ordinal)
+        // (vec![], HashMap::new())
     }
     fn mark_page_own_node(
         user_root_id: usize,
