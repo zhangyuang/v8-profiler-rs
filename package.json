@@ -1,0 +1,7 @@
+{
+  "name": "v8-profiler-rs",
+  "description": "Analyze v8 heapsnapshot By Rust",
+  "version": "1.0.34",
+  "license": "MIT",
+  "author": "zhangyuang"
+}

@@ -1,0 +1,118 @@
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the dev branch
+on:
+  push:
+    branches: [dev, main, feat/**, ci/test, test/**]
+  pull_request:
+    branches: [dev, main]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:  
+  build-web:
+    if: ${{ !contains(github.event.head_commit.message, 'skip ci') && !contains(github.event.head_commit.message, '.md')}}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 6
+      - name: Install dependencies
+        run: |
+          pnpm i --no-frozen-lockfile
+      - name: Use Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: 'https://registry.npmjs.org'
+          cache: "pnpm"
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Install
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - run: npm run build:web && npx esno scripts/publish.ts --platform web
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-node:
+    if: ${{ !contains(github.event.head_commit.message, 'skip ci') && !contains(github.event.head_commit.message, '.md')}}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 6
+      - name: Use Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: 'https://registry.npmjs.org'
+          cache: "pnpm"
+      - name: Install dependencies
+        run: |
+          pnpm i --no-frozen-lockfile
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Install
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - run: npm run build:node && npx esno scripts/publish.ts --platform node
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build-bundler:
+    if: ${{ !contains(github.event.head_commit.message, 'skip ci') && !contains(github.event.head_commit.message, '.md')}}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 6
+      - name: Use Node.js 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: 'https://registry.npmjs.org'
+          cache: "pnpm"
+      - name: Install dependencies
+        run: |
+          pnpm i --no-frozen-lockfile
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Install
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - run: npm run build:bundler && npx esno scripts/publish.ts --platform bundler
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy: 
+    if: ${{ contains(github.actor, 'zhangyuang') && github.ref_name == 'main' }}
+    needs:  
+      - build-bundler
+      - build-node
+      - build-web
+      
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+      - run: yarn && npx esno scripts/deploy.ts
+        env:
+          SERVERLESS_DEPLOY_AK: ${{ secrets.SERVERLESS_DEPLOY_AK }}
+          SERVERLESS_DEPLOY_ENDPOINT: ${{ secrets.SERVERLESS_DEPLOY_ENDPOINT }}
+          SERVERLESS_DEPLOY_ID: ${{ secrets.SERVERLESS_DEPLOY_ID }}
+          SERVERLESS_DEPLOY_SECRET: ${{ secrets.SERVERLESS_DEPLOY_SECRET }}
+          SERVERLESS_DEPLOY_TIMEOUT: ${{ secrets.SERVERLESS_DEPLOY_TIMEOUT }}
