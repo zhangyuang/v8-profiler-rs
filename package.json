@@ -3,5 +3,8 @@
   "description": "Analyze v8 heapsnapshot By Rust",
   "version": "1.0.34",
   "license": "MIT",
-  "author": "zhangyuang"
+  "author": "zhangyuang",
+  "scripts": {
+    "push": "git push origin public -f"
+  }
 }
