@@ -90,22 +90,26 @@ calculate stringify nodes spend 994ms
 Complete parse time spend 4935ms # 包含 Rust 字符串转换为 JS 字符串的完整解析过程总耗时
 ``` -->
 
-<!-- ## 解析超时问题解决方案
+## 解析超时问题解决方案
 
-目前在 `Chrome` 下会出现解析时间过长的问题。出现此问题的话可选择使用 `Safari`, `Firefox` 浏览器解析。或使用我们之后将会实现的 `多线程` 解析方案或采用下列方案来临时解决。
+在超大文件的情况下可能会出现 `Wasm` 内存溢出解析时间过长等问题。出现此问题的话可选择使用 `Safari`, `Firefox` 浏览器解析。或使用我们之后将会实现的 `多线程` 解析方案或采用下列方案来临时解决。
 ### 直接上传本地序列化后的文件
+
+下载不同平台的 `Rust` 编译后二进制文件后直接本地调用
+
+请根据当前的平台架构选择对应的二进制文件下载执行，[下载地址](https://github.com/zhangyuang/v8-profiler-rs/binary)
 
 由于浏览器场景下对超大文件的解析有可能会出现浏览器`假死`的现象。如果开发者想获得最棒最稳定的解析速度，我们提供了 `Rust` 编译的 `Package` 可以直接在本地解析生成序列化后的节点信息 `JSON` 文件，同样可直接上传到网站分析，跳过网站解析的步骤。
 
 ```bash
-$ cargo install v8_profile_rs
-$ v8-parse --help # shop cli argument
-$ v8-parse -i ./big.heapsnapshot -o ./result.json
+$ ./v8-parse --help # shop cli argument
+$ ./v8-parse -i ./big.heapsnapshot -o ./result.json # 输入文件big.heapsnapshot 输出 result.json
 ```
 
 可将解析后的 `result.json` 文件直接上传分析。
 
-![](https://res.wx.qq.com/shop/public/bc0838b5-43b4-4217-8aec-b628f3e97642.png) -->
+![](https://res.wx.qq.com/shop/public/bc0838b5-43b4-4217-8aec-b628f3e97642.png)
+
 
 ## 答疑群
 
