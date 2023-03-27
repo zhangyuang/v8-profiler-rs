@@ -6,6 +6,9 @@
 
 我们部署了一个[在线网站](https://v8.ssr-fc.com/)可以实时上传 `V8` 内存快照结果并分析。建议使用 `Safari`, `firefox` 浏览器访问，实测在这些浏览器下 `wasm` 执行性能显著优于 `Chrome`。
 
+## 更新记录
+
+- 2023.3.27 实现 Rust 多线程解析快照文件，支持以二进制文件形式调用
 ## 已实现的功能
 
 🚀 表示已经实现的功能，本应用在持续更新中，更新内容将会及时同步到 README.md 当中，敬请关注。如果本应用对你有帮助，麻烦点个 Star ✨
@@ -24,6 +27,8 @@
 | 支持两种对比类型筛选新增节点/筛选GC大小增大节点      | 🚀    |
 | 支持自动化根据节点数量过滤非业务节点信息      | 🚀    |
 | 支持上传分析本地序列化后的 JSON 文件      | 🚀    |
+| Rust 多线程解析快照问      | 🚀    |
+
 
 
 ## 为什么用 Rust
@@ -97,14 +102,17 @@ Complete parse time spend 4935ms # 包含 Rust 字符串转换为 JS 字符串�
 
 下载不同平台的 `Rust` 编译后二进制文件后直接本地调用
 
-请根据当前的平台架构选择对应的二进制文件下载执行，[下载地址](https://github.com/zhangyuang/v8-profiler-rs/tree/public/binary)
+请根据当前的平台架构选择对应的二进制文件下载执行，[下载地址](https://github.com/zhangyuang/v8-profiler-rs/binary)
 
 由于浏览器场景下对超大文件的解析有可能会出现浏览器`假死`的现象。如果开发者想获得最棒最稳定的解析速度，我们提供了 `Rust` 编译的 `Package` 可以直接在本地解析生成序列化后的节点信息 `JSON` 文件，同样可直接上传到网站分析，跳过网站解析的步骤。
 
 ```bash
 $ ./v8-parse --help # shop cli argument
 $ ./v8-parse -i ./big.heapsnapshot -o ./result.json # 输入文件big.heapsnapshot 输出 result.json
+$ ./v8-parse -i ./big.heapsnapshot -o ./result.json -p # 多线程模式解析提示解析速度
+
 ```
+ 
 
 可将解析后的 `result.json` 文件直接上传分析。
 
