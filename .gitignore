@@ -124,8 +124,7 @@ Cargo.lock
 snapshot.json
 .DS_Store
 !example/**/*.json
-example/index.js
-example/index.d.ts
+example
 .eslintcache
 run
 **/pkg
