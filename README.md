@@ -8,6 +8,8 @@
 
 ## 更新记录
 
+- 2023.3.30 实现 `Wasm + WebWorker多线程` 模式解析，但此方案在 `Apple M1/M2` 的 `CPU` 架构下无法工作
+
 - 2023.3.29 实现 `Wasm + WebWorker` 模式解析，避免解析过程中网站无响应，`WebWorker` 多线程解析模式开发中
 
 - 2023.3.27 实现 Rust 多线程解析快照文件，支持以二进制文件形式调用
@@ -32,6 +34,8 @@
 | 支持上传分析本地序列化后的 JSON 文件      | 🚀    |
 | 支持 `Rust` 多线程解析快照      | 🚀    |
 | 实现 `Wasm + WebWorker` 模式解析，避免解析过程中网站无响应      | 🚀    |
+| 实现 `Wasm + WebWorker多线程` 模式解析     | 🚀    |
+
 
 
 
@@ -47,57 +51,6 @@
 
 最后 `Rust` 官方对 `Webassembly` 的支持非常优秀，我们可以轻易的将 `Rust` 代码编译为  `Webassembly` 在浏览器中调用。
 
-<!-- ## 性能测试
-
-建议使用 `Safari`, `firefox` 浏览器访问，实测在这些浏览器下 `wasm` 执行性能显著优于 `Chrome`。以下为节点数量为 `71.5w` 个内存节点的快照在不同环境的解析速度。我们之后将会不断优化大文件的解析性能。下列为相同逻辑的代码在不同环境的执行速度。
-
-### 原生 JS 代码
-
-```bash
-calculate nodes spend 802ms
-calculate edge spend 1621ms
-calculate source spend 821ms
-calculate page own node spend 406ms
-calculate mark_retainer spend 995ms
-calculate retainedsize spend 1661ms
-calculate parse_snapshot spend 6306ms # 解析为最终的 Rust Struct 总耗时
-```
-### 原生 Rust 单线程代码
-
-```bash
-calculate nodes spend 412ms
-calculate edge spend 621ms
-calculate source spend 381ms
-calculate page own node spend 206ms
-calculate mark_retainer spend 395ms
-calculate retainedsize spend 961ms
-calculate parse_snapshot spend 2984ms # 解析为最终的 Rust Struct 总耗时
-```
-
-### 原生 Rust 多线程代码(优化中)
-
-```bash
-calculate nodes spend 219ms
-calculate edge spend 80ms
-calculate node to rc node spend 54ms
-calculate source spend 391ms
-calculate page own node spend 202ms
-calculate mark_retainer spend 350ms
-calculate retainedsize spend 945ms
-calculate parse_snapshot spend 2277ms # 解析为最终的 Rust Struct 总耗时
-```
-### firefox + wasm 单线程
-
-```bash
-calculate nodes spend 575ms
-calculate edge spend 748ms
-calculate source spend 255ms
-calculate page own node spend 179ms
-calculate mark_retainer spend 280ms
-calculate retainedsize spend 1104ms
-calculate stringify nodes spend 994ms
-Complete parse time spend 4935ms # 包含 Rust 字符串转换为 JS 字符串的完整解析过程总耗时
-``` -->
 
 ## 解析超时问题解决方案
 
