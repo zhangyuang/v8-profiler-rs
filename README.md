@@ -8,6 +8,10 @@
 
 ## 更新记录
 
+- 2023.6.12 以 `percentangle` 为维度进行排列。即 `shallow size / retained_size` 的比例，如果一个节点被 `GC` 后释放的内存远超自身的内存极有可能存在问题
+
+- 2023.4.9 支持在 `Firefox` 浏览器下使用 `Wasm + WebWorker` 模式解析
+
 - 2023.3.30 实现 `Wasm + WebWorker多线程` 模式解析，但此方案在 `Apple M1/M2` 的 `CPU` 架构下无法工作
 
 - 2023.3.29 实现 `Wasm + WebWorker` 模式解析，避免解析过程中网站无响应，`WebWorker` 多线程解析模式开发中
