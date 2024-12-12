@@ -63,7 +63,7 @@
 
 下载不同平台的 `Rust` 编译后二进制文件后直接本地调用
 
-请根据当前的平台架构选择对应的二进制文件下载执行，[下载地址](https://github.com/zhangyuang/v8-profiler-rs/binary)
+请根据当前的平台架构选择对应的二进制文件下载执行，[下载地址](https://github.com/zhangyuang/v8-profiler-rs/tree/public/binary)
 
 由于浏览器场景下对超大文件的解析有可能会出现浏览器`假死`的现象。如果开发者想获得最棒最稳定的解析速度，我们提供了 `Rust` 编译的 `Package` 可以直接在本地解析生成序列化后的节点信息 `JSON` 文件，同样可直接上传到网站分析，跳过网站解析的步骤。
 
