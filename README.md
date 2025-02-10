@@ -88,6 +88,13 @@ $ ./v8-parse -i ./big.heapsnapshot -o ./result.json -p # 多线程模式解析�
 
 <div style="display:flex">
 <img src="https://res.wx.qq.com/op_res/Nv12X2und927FEOvJ5iflzX-WBW07GSC22kumTCiShZnudKpG0jMuRs70ecHQb3Hy1QjjaASNzyOuMgHr43Wpw" width="300">
+
+## 赞赏
+
+如果你觉得本项目对你有帮助，欢迎请作者喝杯咖啡，你的支持是我最大的动力！
+
+<img src="https://res.wx.qq.com/op_res/iFZOgoe_-KP8Y-EfgfZkEEQ4fU2WcAhMbubL3CFq9VbCktQyiUO5tnJouMfJhvBX4JQ2Wio1Pw04PR68MBjbwQ" width="300">
+<img src="https://res.wx.qq.com/op_res/9jSx7WJn6FBlfQ0ColL4hnvX91D9MlB_XPCgLFM527qknHp0utXZkLah6MYcumdVejK4884dvgkY0NIbBLPrYg" width="300">
 </div>
 
 ## 前置知识
