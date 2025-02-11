@@ -1,0 +1,18 @@
+{
+  "name": "v8-profiler-rs",
+  "type": "module",
+  "collaborators": [
+    "yuuangzhang"
+  ],
+  "version": "1.0.6",
+  "files": [
+    "v8_profiler_rs_bg.wasm",
+    "v8_profiler_rs.js",
+    "v8_profiler_rs.d.ts"
+  ],
+  "main": "v8_profiler_rs.js",
+  "types": "v8_profiler_rs.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

@@ -6,7 +6,7 @@ provider:
   timeout: 20
   initTimeout: 20
   concurrency: 10
-  runtime: nodejs12
+  runtime: nodejs18
 
 custom: # 发布后自动生成测试域名
   customDomain:
@@ -16,10 +16,10 @@ package:
   include:
     - build
     - public
-    - pkg-mt
     - pkg
   exclude:
     - package-lock.json
+    - src
   artifact: code.zip
 
 deployType:

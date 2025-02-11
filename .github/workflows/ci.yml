@@ -17,17 +17,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2 
       - name: Setup Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
-          node-version: 16
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          default: true
-      - name: Install
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+          node-version: 18
 
-      - run: npx esno scripts/deploy.ts
+      - run: cd example && yarn && npm run deploy
         env:
           CI: true
           SERVERLESS_DEPLOY_AK: ${{ secrets.SERVERLESS_DEPLOY_AK }}

@@ -130,22 +130,22 @@ export const readAsStr = async (file: any): Promise<string> => {
   })
 }
 export const parseOptions = [
-  { text: '解析方式', value: 'wasm' },
+  { text: 'Parse Method', value: 'wasm' },
   { text: 'Wasm + WebWorker', value: 'webworker' },
 ];
 export const compareOptions = [
-  { text: '比较方式', value: 'addtional' },
-  { text: '新增节点', value: 'addtional' },
-  { text: '增长节点', value: 'bigger' },
+  { text: 'Compare Method', value: 'addtional' },
+  { text: 'New Nodes', value: 'addtional' },
+  { text: 'Growing Nodes', value: 'bigger' },
 ];
 
 export const filterNodeOptions = [
-  { text: '是否过滤非JS层节点', value: 0 },
-  { text: '只展示JS层非原生节点(业务节点)', value: 1 },
-  { text: '展示JS层所有节点', value: 2 },
+  { text: 'Filter Non-JS Layer Nodes', value: 0 },
+  { text: 'Show JS Non-Native Nodes Only (Business Nodes)', value: 1 },
+  { text: 'Show All JS Layer Nodes', value: 2 },
 ]
 export const filterConstructorOptions = ref([
-  { text: '展示所有类型节点', value: 'all' },
+  { text: 'Show All Node Types', value: 'all' },
 ])
 
 export const getNodeById = (data: Node[], idOrdinal: Record<number, number>, nodeId: number) => {
@@ -175,7 +175,7 @@ export const calculateByConstructor = (nodes: Node[]) => {
       ...obj,
       [key]: value
     }), {});
-  filterConstructorOptions.value = [{ text: '展示所有类型节点', value: 'all' }]
+  filterConstructorOptions.value = [{ text: 'Show All Node Types', value: 'all' }]
     .concat(Object.keys(sortedConstructors).map(item => ({ text: item, value: item })))
   return sortedConstructors
 }

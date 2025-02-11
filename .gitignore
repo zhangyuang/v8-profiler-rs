@@ -128,9 +128,6 @@ example/index.js
 example/index.d.ts
 .eslintcache
 run
-**/pkg-mt
-**/pkg
-
 **/yarn.lock
 
 **.heapsnapshot
@@ -148,4 +145,5 @@ HeapSnapshotLoader.js
 js-flags.json
 flags.json
 foo.js
-exmaple/build
+example/build
+**/yarn.lock
