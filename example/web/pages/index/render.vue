@@ -3,17 +3,15 @@
 </template>
 
 <script lang="ts" setup>
-import { inject, onMounted, toRefs } from 'vue'
+import { inject, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 import { Notify } from 'vant'
 import type { EChartsOption, GraphSeriesOption } from 'echarts'
-import { useSnapShotStore } from '@/store'
 import './index.less'
 import type { Node, RenderOptions } from '@/type'
-import { NODE_COLORS, compareName, calculateByConstructor, filterConstructorOptions } from '@/utils'
+import { NODE_COLORS, compareName, calculateByConstructor } from '@/utils'
 
-const store = useSnapShotStore()
 const router = useRouter()
 const renderOptions = inject('renderOptions')
 const { maxNodes, nodeSize,

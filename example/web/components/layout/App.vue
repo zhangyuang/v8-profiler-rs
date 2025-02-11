@@ -121,7 +121,7 @@
           <div v-for="item in analyze.additional.sortByCount" class="text-black text-opacity-50 mb-[10px]">
             新增节点名称: <span class="font-bold">{{ item.name }} </span>， 新增次数达到 <span class="font-bold">{{
               item.count
-            }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
+              }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
             <template v-if="item.sourceString.includes('<br />')">
               位于多个文件 <div class="" v-html="item.sourceString"></div>
             </template>
@@ -137,7 +137,7 @@
           <div v-for="item in analyze.additional?.sortRetainedSize" class="text-black text-opacity-50 mb-[10px]">
             新增节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span> 可释放大小 <span class="font-bold">{{
               unitConvert(item.retained_size)
-            }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
+              }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
           </div>
         </div>
         <div v-if="analyze.bigger?.sortRetainedSize?.length">
@@ -147,7 +147,7 @@
           <div v-for="item in analyze.bigger?.sortRetainedSize" class="text-black text-opacity-50 mb-[10px]">
             增大节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span> 增长大小 <span class="font-bold">{{
               unitConvert(item.bigger_number ?? 0)
-            }}</span>， 可释放大小占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
+              }}</span>， 可释放大小占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
           </div>
         </div>
       </template>
@@ -160,7 +160,7 @@
           <div v-for="item in analyze.sortByCount" class="text-black text-opacity-50 mb-[10px]">
             节点名称: <span class="font-bold">{{ item.name }} </span>， 重复次数达到 <span class="font-bold">{{
               item.count
-            }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
+              }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
             <template v-if="item.sourceString.includes('<br />')">
               位于多个文件 <div class="" v-html="item.sourceString"></div>
             </template>
@@ -177,7 +177,7 @@
             节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span>
             可GC内存倍数<span class="font-bold">{{ item.pt }}倍 </span> GC后可释放大小 <span class="font-bold">{{
               unitConvert(item.retained_size)
-            }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
+              }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
           </div>
         </div>
       </template>
@@ -377,11 +377,11 @@ renderOptions.tooltip = {
       if (!data.lineStyle) return
       return `<div class="tooltipText">
         <div class="item">
-        <div class="name">边类型:  </div>
+        <div class="name">Edge Type:  </div>
         <div class="code">${data.lineStyle.edge_type}</div>
       </div>
       <div class="item">
-        <div class="name">名称或下标:  </div>
+        <div class="name">Name or Index:  </div>
         <div class="code">${data.lineStyle.name_or_index}</div>
       </div>
       </div>`
@@ -389,40 +389,40 @@ renderOptions.tooltip = {
     const { compare_type, bigger_number, source, constructor, node_type, size, retained_size } = data.itemStyle as Node
     return `<div class="tooltipText">
       ${compare_type ? ` <div class="item">
-          <div class="name red">比较类型: ${compare_type === 'addtional' ? '新增节点' : '可GC大小增大节点'} </div>
+          <div class="name red">Compare Type: ${compare_type === 'addtional' ? 'New Node' : 'Increased GC Size Node'} </div>
       </div>` : ''
       }
       ${bigger_number ? ` <div class="item">
-        <div class="name red">可GC大小增长: ${unitConvert(bigger_number)} </div>
+        <div class="name red">GC Size Growth: ${unitConvert(bigger_number)} </div>
       </div>` : ''
       }
       <div class="item">
-        <div class="name">节点ID:  </div>
+        <div class="name">Node ID:  </div>
         <div class="code">${data.id || ''}</div>
       </div>
       <div class="item">
-        <div class="name">节点类型:  </div>
+        <div class="name">Node Type:  </div>
         <div class="code">${node_type}</div>
       </div>
       ${constructor ? ` <div class="item">
-        <div class="name">构造函数:  </div>
+        <div class="name">Constructor:  </div>
         <div class="code">${constructor}</div>
       </div>` : ''
       }
       <div class="item">
-        <div class="name">节点名称:  </div>
+        <div class="name">Node Name:  </div>
         <div class="code">${data.name}</div>
       </div>
       <div class="item">
-        <div class="name">自身大小:  </div>
+        <div class="name">Self Size:  </div>
         <div class="code">${unitConvert(size)}</div>
       </div>
       <div class="item">
-        <div class="name">可GC大小:  </div>
+        <div class="name">GC Size:  </div>
         <div class="code">${unitConvert(retained_size)}</div>
       </div>
       ${source ? ` <div class="item">
-        <div class="name">源文件位置:  </div>
+        <div class="name">Source Location:  </div>
         <div class="code">${source}</div>
       </div>` : ''
       }
