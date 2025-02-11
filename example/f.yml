@@ -1,0 +1,28 @@
+service:
+  name: v8-profile-rs
+provider:
+  name: aliyun
+  memorySize: 8192
+  timeout: 20
+  initTimeout: 20
+  concurrency: 10
+  runtime: nodejs12
+
+custom: # 发布后自动生成测试域名
+  customDomain:
+    domainName: auto
+
+package:
+  include:
+    - build
+    - public
+    - pkg-mt
+    - pkg
+  exclude:
+    - package-lock.json
+  artifact: code.zip
+
+deployType:
+  type: koa                    ## 部署的应用类型
+  version: 3.0.0
+  name: ssr

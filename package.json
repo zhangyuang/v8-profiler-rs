@@ -1,0 +1,10 @@
+{
+  "name": "v8-profiler-rs",
+  "description": "Analyze v8 heapsnapshot By Rust",
+  "version": "1.0.42",
+  "license": "MIT",
+  "scripts": {
+    "start": "cd ./example && npm run start"
+  },
+  "dependencies": {}
+}
