@@ -8,6 +8,8 @@
 
 We have deployed an [online website](https://v8.ssr-fc.com/) where you can upload and analyze V8 memory snapshots in real-time. We recommend using `Safari` or `Firefox` browsers, as `wasm` execution performance is significantly better than in `Chrome` .
 
+![image](https://res.wx.qq.com/shop/public/2025-02-12/e56b4e3d-a8d1-4638-b7b7-f92412e54a8f.png)
+
 ## Implemented Features 
 
 🚀 indicates implemented features. This application is continuously being updated, and updates will be synchronized to the README.md. Please stay tuned. If this application helps you, please give it a Star ✨
@@ -51,12 +53,15 @@ The prohect has been updating, if you have any questions or suggestions, please 
 <div style="display:flex">
 <img src="https://res.wx.qq.com/op_res/Nv12X2und927FEOvJ5iflzX-WBW07GSC22kumTCiShZnudKpG0jMuRs70ecHQb3Hy1QjjaASNzyOuMgHr43Wpw" width="300">
 
-## Sponsor
+### How to sponsor me
 
-If you think this project is helpful to you, please sponsor the author to buy a cup of coffee, your support is my biggest motivation!
+There are two ways to sponsor me both Alipay and WeChat
 
-<img src="https://res.wx.qq.com/op_res/iFZOgoe_-KP8Y-EfgfZkEEQ4fU2WcAhMbubL3CFq9VbCktQyiUO5tnJouMfJhvBX4JQ2Wio1Pw04PR68MBjbwQ" width="300">
-<img src="https://res.wx.qq.com/op_res/9jSx7WJn6FBlfQ0ColL4hnvX91D9MlB_XPCgLFM527qknHp0utXZkLah6MYcumdVejK4884dvgkY0NIbBLPrYg" width="300">
+Eth address: 0x87a2575a5d4dbD5f965e3e3a3d20641BC9a5d192
+
+<div style="display:flex">
+  <img src="https://res.wx.qq.com/shop/public/2025-02-12/d50454c8-65f0-4a81-956b-b8837c187364.jpg" width=200>
+  <img src="https://res.wx.qq.com/op_res/9jSx7WJn6FBlfQ0ColL4hnvX91D9MlB_XPCgLFM527qknHp0utXZkLah6MYcumdVejK4884dvgkY0NIbBLPrYg" width=200>
 </div>
 
 ## How to use
@@ -86,5 +91,3 @@ The node fields are as follows:
     "percent": string; // the retained size ratio of the node
 }
 ```
-
-![image](https://res.wx.qq.com/shop/public/2025-02-12/e56b4e3d-a8d1-4638-b7b7-f92412e54a8f.png)
