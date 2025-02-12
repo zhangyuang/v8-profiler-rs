@@ -78,7 +78,7 @@
         <div class="flex items-center">
           <div class="rounded-[50%] w-[10px] h-[10px]"
             :style="{ backgroundColor: NODE_COLORS[key] || NODE_COLORS['unknown'] }"></div>
-          <div class="ml-[10px] text-black text-opacity-50"> {{ key }} Count: {{ value }}</div>
+          <div class="ml-[10px] text-black text-opacity-50"> {{ key }} : {{ value }}</div>
         </div>
       </div>
     </div>

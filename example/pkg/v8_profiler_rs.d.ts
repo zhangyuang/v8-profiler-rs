@@ -2,19 +2,17 @@
 /* eslint-disable */
 /**
  * @param {Uint8Array} path
- * @param {object | undefined} [options]
  * @returns {Uint8Array}
  */
-export function parse_v8_snapshot(path: Uint8Array, options?: object): Uint8Array;
+export function parse_v8_snapshot(path: Uint8Array): Uint8Array;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
-  readonly parse_v8_snapshot: (a: number, b: number, c: number) => Array;
+  readonly parse_v8_snapshot: (a: number, b: number) => Array;
+  readonly __wbindgen_export_0: WebAssembly.Table;
   readonly memory: WebAssembly.Memory;
-  readonly __wbindgen_export_1: WebAssembly.Table;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
-  readonly __externref_table_alloc: () => number;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_thread_destroy: (a?: number, b?: number, c?: number) => void;

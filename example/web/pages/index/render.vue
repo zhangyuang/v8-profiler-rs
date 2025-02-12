@@ -23,8 +23,12 @@ force.value = {
   edgeLength: 200,
   layoutAnimation: true
 }
+let count = 0
 const render = (snapshort: Node[]) => {
-  renderOptions.nodeByConstructor = calculateByConstructor(snapshort)
+  if (count === 0) {
+    renderOptions.nodeByConstructor = calculateByConstructor(snapshort)
+    count++
+  }
 
   const nodes: GraphSeriesOption['data'] = []
   let sortNodes: Node[] = snapshort.filter(node => {
