@@ -27,7 +27,10 @@ export class ContainerLifeCycle {
     this.app.use(koaStatic(join(cwd, './build'), commonConfig))
     this.app.use(koaStatic(join(cwd, './public'), commonConfig))
     this.app.use(koaStatic(join(cwd, './build/client'), commonConfig))
-    this.app.use(koaStatic(join(cwd, './pkg'), commonConfig))
+    this.app.use(koaStatic(join(cwd, './pkg'), {
+      ...commonConfig,
+      maxage: 'no-cache'
+    }))
     await initialSSRDevProxy(this.app)
   }
 }
