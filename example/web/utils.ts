@@ -145,7 +145,7 @@ export const filterNodeOptions = [
   { text: 'Show All JS Layer Nodes', value: 2 },
 ]
 export const filterConstructorOptions = ref([
-  { text: 'Show All Node Types', value: 'all' },
+  { text: 'Filter Nodes type', value: 'all' },
 ])
 
 export const getNodeById = (data: Node[], idOrdinal: Record<number, number>, nodeId: number) => {
@@ -175,7 +175,7 @@ export const calculateByConstructor = (nodes: Node[]) => {
       ...obj,
       [key]: value
     }), {});
-  filterConstructorOptions.value = [{ text: 'Show All Node Types', value: 'all' }]
+  filterConstructorOptions.value = [{ text: 'Filter Nodes type', value: 'all' }]
     .concat(Object.keys(sortedConstructors).map(item => ({ text: item, value: item })))
   return sortedConstructors
 }

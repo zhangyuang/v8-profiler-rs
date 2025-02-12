@@ -86,3 +86,5 @@ The node fields are as follows:
     "percent": string; // the retained size ratio of the node
 }
 ```
+
+![image](https://res.wx.qq.com/shop/public/2025-02-12/e56b4e3d-a8d1-4638-b7b7-f92412e54a8f.png)
