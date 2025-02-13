@@ -1,7 +1,7 @@
 import type { Node, SortDetail, Params } from './type'
 
 export const NAME_PROPERTY = [
-  "system / Map", 
+  "system / Map",
   "Array",
   "Object",
   "symbol"
@@ -59,7 +59,7 @@ export const unitConvert = (byte: number | string) => {
     return val + 'byte'
   }
 }
-const byteToMb = (byte: number | string) => {
+export const byteToMb = (byte: number | string) => {
   const val = Number(byte)
   return (val / oneMb).toFixed(2) + 'mb'
 }

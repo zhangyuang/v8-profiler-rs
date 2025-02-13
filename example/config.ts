@@ -1,7 +1,7 @@
 import type { UserConfig } from 'ssr-types'
 
 const userConfig: UserConfig = {
-  mode: 'csr',
+  mode: 'ssr',
   css: () => {
     const tailwindcss = require('tailwindcss')
     const autoprefixer = require('autoprefixer')
@@ -29,8 +29,8 @@ const userConfig: UserConfig = {
     {
       tagName: 'script',
       describe: {
-          type: 'module'
-        
+        type: 'module'
+
       },
       content: `
         import * as v8_profiler_rs  from '/v8_profiler_rs.js'

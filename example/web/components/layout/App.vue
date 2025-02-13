@@ -1,5 +1,10 @@
 <template>
-  <div class="container">
+  <div v-if="route.path === '/report'">
+    <router-view>
+
+    </router-view>
+  </div>
+  <div v-else class="container">
     <div class="board">
       <div class="title">
         Control Panel
@@ -121,7 +126,7 @@
           <div v-for="item in analyze.additional.sortByCount" class="text-black text-opacity-50 mb-[10px]">
             新增节点名称: <span class="font-bold">{{ item.name }} </span>， 新增次数达到 <span class="font-bold">{{
               item.count
-              }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
+            }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
             <template v-if="item.sourceString.includes('<br />')">
               位于多个文件 <div class="" v-html="item.sourceString"></div>
             </template>
@@ -137,7 +142,7 @@
           <div v-for="item in analyze.additional?.sortRetainedSize" class="text-black text-opacity-50 mb-[10px]">
             新增节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span> 可释放大小 <span class="font-bold">{{
               unitConvert(item.retained_size)
-              }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
+            }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
           </div>
         </div>
         <div v-if="analyze.bigger?.sortRetainedSize?.length">
@@ -147,7 +152,7 @@
           <div v-for="item in analyze.bigger?.sortRetainedSize" class="text-black text-opacity-50 mb-[10px]">
             增大节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span> 增长大小 <span class="font-bold">{{
               unitConvert(item.bigger_number ?? 0)
-              }}</span>， 可释放大小占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
+            }}</span>， 可释放大小占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
           </div>
         </div>
       </template>
@@ -160,7 +165,7 @@
           <div v-for="item in analyze.sortByCount" class="text-black text-opacity-50 mb-[10px]">
             节点名称: <span class="font-bold">{{ item.name }} </span>， 重复次数达到 <span class="font-bold">{{
               item.count
-              }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
+            }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
             <template v-if="item.sourceString.includes('<br />')">
               位于多个文件 <div class="" v-html="item.sourceString"></div>
             </template>
@@ -177,7 +182,7 @@
             节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span>
             可GC内存倍数<span class="font-bold">{{ item.pt }}倍 </span> GC后可释放大小 <span class="font-bold">{{
               unitConvert(item.retained_size)
-              }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
+            }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
           </div>
         </div>
       </template>
@@ -271,8 +276,8 @@ renderOptions.label = {
   position: 'right',
   formatter: (params: any) => {
     const { data } = params
-    const { id, name } = data
-    return `${name.length > 50 ? '' : name}@${id}`
+    const { id, name, value } = data
+    return `${name.length > 50 ? '' : name}@${id}@${unitConvert(value)}`
   }
 }
 
