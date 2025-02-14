@@ -53,7 +53,8 @@
       <Button type="primary" class="btn" v-if="store.loaded === 'null'"
         @click="open('https://github.com/zhangyuang/v8-profiler-rs#%E6%9B%B4%E6%96%B0%E8%AE%B0%E5%BD%95')">Change
         Log</Button>
-      <Button type="primary" class="btn" @click="analyzeFn" v-if="store.loaded === 'finish'">Generate Analysis
+      <Button type="primary" class="btn" @click="router.push('/report')" v-if="store.loaded === 'finish'">Generate
+        Analysis
         Report</Button>
       <Button type="primary" class="btn" v-if="store.loaded === 'null'"
         @click="open('https://github.com/zhangyuang/v8-profiler-rs')">Repository (Welcome Star✨)</Button>
@@ -201,7 +202,7 @@ import {
   compareOptions, filterNodeOptions, read,
   tips, filterConstructorOptions, NODE_COLORS, EDGE_COLORS, renderNodeId
 } from '@/utils'
-import { analyzeSingle, analyzeCompare, unitConvert } from '@/analyze'
+import { analyzeCompare, unitConvert } from '@/analyze'
 const store = useSnapShotStore()
 const router = useRouter()
 const route = useRoute()
@@ -305,18 +306,7 @@ const defaultDemo = async () => {
   store.setLoading('finish')
   confirm()
 }
-const analyzeFn = async () => {
-  const { data } = store
-  if (compare.value.is) {
-    // 多快照
-  } else {
-    renderOptions.analyze = await analyzeSingle({
-      data,
-      type: 'panel'
-    })
-  }
-  renderOptions.analyze.show = true
-}
+
 const upload = async (e: any) => {
   const file = Array.from((e.target as HTMLInputElement)?.files!)
   if (!file || file.length > 2) {
@@ -447,7 +437,12 @@ const confirm = () => {
   } else {
     res = store.data
   }
-  children.value.render(res.filter(item => item.constructor === renderOptions.filterNodeByConstructor || renderOptions.filterNodeByConstructor === 'all'))
+  const filteredNodes = renderOptions.filterNodeByConstructor === 'all' ? res :
+    res.filter(item => item.constructor === renderOptions.filterNodeByConstructor)
+  if (renderOptions.filterNodeByConstructor === 'string') {
+    filteredNodes.sort((a, b) => b.retained_size - a.retained_size)
+  }
+  children.value.render(filteredNodes)
 }
 
 
