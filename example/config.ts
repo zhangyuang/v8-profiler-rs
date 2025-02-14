@@ -1,7 +1,7 @@
 import type { UserConfig } from 'ssr-types'
 
 const userConfig: UserConfig = {
-  mode: 'ssr',
+  mode: 'csr',
   css: () => {
     const tailwindcss = require('tailwindcss')
     const autoprefixer = require('autoprefixer')

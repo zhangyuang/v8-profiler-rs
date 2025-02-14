@@ -11,7 +11,6 @@ import type { EChartsOption, GraphSeriesOption } from 'echarts'
 import './index.less'
 import type { Node, RenderOptions } from '@/type'
 import { NODE_COLORS, compareName, calculateByConstructor } from '@/utils'
-
 const router = useRouter()
 const renderOptions = inject('renderOptions')
 const { maxNodes, nodeSize,

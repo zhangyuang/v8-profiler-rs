@@ -23,9 +23,9 @@
           <DropdownItem class="field" v-model="renderOptions.filterNodeByConstructor"
             :options="filterConstructorOptions" />
         </DropdownMenu>
-        <DropdownMenu class="field">
+        <!-- <DropdownMenu class="field">
           <DropdownItem class="field" v-model="filterNode" :options="filterNodeOptions" />
-        </DropdownMenu>
+        </DropdownMenu> -->
       </template>
       <template v-if=!isIndex>
         <Field class="field" v-model="parentDepth" label="Reference Depth"></Field>
@@ -127,7 +127,7 @@
           <div v-for="item in analyze.additional.sortByCount" class="text-black text-opacity-50 mb-[10px]">
             新增节点名称: <span class="font-bold">{{ item.name }} </span>， 新增次数达到 <span class="font-bold">{{
               item.count
-            }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
+              }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
             <template v-if="item.sourceString.includes('<br />')">
               位于多个文件 <div class="" v-html="item.sourceString"></div>
             </template>
@@ -143,7 +143,7 @@
           <div v-for="item in analyze.additional?.sortRetainedSize" class="text-black text-opacity-50 mb-[10px]">
             新增节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span> 可释放大小 <span class="font-bold">{{
               unitConvert(item.retained_size)
-            }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
+              }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
           </div>
         </div>
         <div v-if="analyze.bigger?.sortRetainedSize?.length">
@@ -153,7 +153,7 @@
           <div v-for="item in analyze.bigger?.sortRetainedSize" class="text-black text-opacity-50 mb-[10px]">
             增大节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span> 增长大小 <span class="font-bold">{{
               unitConvert(item.bigger_number ?? 0)
-            }}</span>， 可释放大小占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
+              }}</span>， 可释放大小占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
           </div>
         </div>
       </template>
@@ -166,7 +166,7 @@
           <div v-for="item in analyze.sortByCount" class="text-black text-opacity-50 mb-[10px]">
             节点名称: <span class="font-bold">{{ item.name }} </span>， 重复次数达到 <span class="font-bold">{{
               item.count
-            }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
+              }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
             <template v-if="item.sourceString.includes('<br />')">
               位于多个文件 <div class="" v-html="item.sourceString"></div>
             </template>
@@ -183,7 +183,7 @@
             节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span>
             可GC内存倍数<span class="font-bold">{{ item.pt }}倍 </span> GC后可释放大小 <span class="font-bold">{{
               unitConvert(item.retained_size)
-            }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
+              }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
           </div>
         </div>
       </template>
@@ -439,7 +439,7 @@ const confirm = () => {
   }
   const filteredNodes = renderOptions.filterNodeByConstructor === 'all' ? res :
     res.filter(item => item.constructor === renderOptions.filterNodeByConstructor)
-  if (renderOptions.filterNodeByConstructor === 'string') {
+  if (['string', 'concatenated string'].includes(renderOptions.filterNodeByConstructor ?? '')) {
     filteredNodes.sort((a, b) => b.retained_size - a.retained_size)
   }
   children.value.render(filteredNodes)
