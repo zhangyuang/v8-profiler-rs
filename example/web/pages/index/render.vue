@@ -25,6 +25,7 @@ force.value = {
 let count = 0
 const render = (snapshort: Node[]) => {
   if (count === 0) {
+    //@ts-expect-error
     renderOptions.nodeByConstructor = calculateByConstructor(snapshort)
     count++
   }

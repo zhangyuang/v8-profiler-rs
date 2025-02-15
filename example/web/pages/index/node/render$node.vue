@@ -9,12 +9,13 @@ import * as echarts from 'echarts'
 import type { EChartsOption, GraphSeriesOption } from 'echarts'
 import { EDGE_COLORS, NODE_COLORS, nativeNode, NodeType, calculateByConstructor, renderNodeId } from '@/utils'
 import '@/pages/index/index.less'
+import { globalStore } from '@/store'
 import type { Node, RenderOptions } from '@/type'
-
 const renderOptions = inject('renderOptions')
 const { nodeSize, childDepth, filterNative, edgeCounts, nodeName,
   tooltip, force, label
 } = toRefs(renderOptions as RenderOptions)
+console.log(globalStore)
 force.value = {
   repulsion: 1000,
   gravity: 0.1,
@@ -23,7 +24,8 @@ force.value = {
 }
 const router = useRouter()
 
-function generate(node: Node, idToNode: Record<number | string, Node>) {
+function generate(node: Node) {
+  const idToNode = globalStore.idToNode
   const links: GraphSeriesOption['links'] = []
   const nodes: GraphSeriesOption['data'] = []
   let queue = [node]
@@ -109,13 +111,8 @@ function generate(node: Node, idToNode: Record<number | string, Node>) {
   return [nodes, links]
 }
 
-const render = (nodes: Node[]) => {
-  const idToNode: Record<number | string, Node> = {}
-  for (const item of nodes) {
-    idToNode[item.id] = item
-  }
-  const node = idToNode[Number(renderNodeId.value)]
-  const [data, links] = generate(node, idToNode);
+const render = () => {
+  const [data, links] = generate(globalStore.idToNode[renderNodeId.value]);
   (renderOptions as RenderOptions).nodeByConstructor = calculateByConstructor(data as any)
   const option: EChartsOption = {
     tooltip: tooltip.value,

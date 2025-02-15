@@ -35,6 +35,7 @@ export type Node = {
   source?: string;
   constructor?: string;
   percent?: string;
+  retainer: number
 }
 
 export type Analyze = {

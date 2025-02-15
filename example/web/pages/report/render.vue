@@ -8,14 +8,14 @@
 <script setup lang="ts">
 //@ts-expect-error
 import markdown from 'markdown-it';
-import { useSnapShotStore } from '@/store'
+import { globalStore } from '@/store'
 const md = markdown({
   html: true,
   linkify: true,
   typographer: true,
 })
 const minCount = 20
-const snapShotStore = useSnapShotStore().data
+const snapShotStore = globalStore.data
 const nodeNameCount = snapShotStore.reduce((acc: Record<string, { count: number, source?: string }>, node) => {
   const name = node.name
   acc[name] = {

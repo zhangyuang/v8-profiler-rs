@@ -41,28 +41,26 @@
         :actions="[{ text: 'Support uploading two snapshot files for comparison' },]">
         <template #reference>
           <Button type="primary" class="btn" @click="fileRef.click()" @mouseenter="pop.snapshot = true"
-            @mouseout="pop.snapshot = false" v-if="store.loaded !== 'finish'">Upload Memory Snapshot</Button>
+            @mouseout="pop.snapshot = false" v-if="loading !== 'finish'">Upload Memory Snapshot</Button>
         </template>
       </Popover>
 
-      <Button type="primary" class="btn" @click="confirm" v-if="store.loaded === 'finish'">Redraw</Button>
-      <Button type="primary" class="btn" @click="defaultDemo" v-if="store.loaded === 'null'">View Default
+      <Button type="primary" class="btn" @click="confirm" v-if="loading === 'finish'">Redraw</Button>
+      <Button type="primary" class="btn" @click="defaultDemo" v-if="loading === 'null'">View Default
         Example</Button>
-      <Button type="primary" class="btn" @click="open('http://doc.ssr-fc.com/docs/features$memory')">User
+      <Button type="primary" class="btn" @click="() => open('http://doc.ssr-fc.com/docs/features$memory')">User
         Manual</Button>
-      <Button type="primary" class="btn" v-if="store.loaded === 'null'"
-        @click="open('https://github.com/zhangyuang/v8-profiler-rs#%E6%9B%B4%E6%96%B0%E8%AE%B0%E5%BD%95')">Change
-        Log</Button>
-      <Button type="primary" class="btn" @click="router.push('/report')" v-if="store.loaded === 'finish'">Generate
+
+      <Button type="primary" class="btn" @click="router.push('/report')" v-if="loading === 'finish'">Generate
         Analysis
         Report</Button>
-      <Button type="primary" class="btn" v-if="store.loaded === 'null'"
+      <Button type="primary" class="btn" v-if="loading === 'null'"
         @click="open('https://github.com/zhangyuang/v8-profiler-rs')">Repository (Welcome Star✨)</Button>
-      <Button type="primary" class="btn" v-if="store.loaded === 'null'"
+      <Button type="primary" class="btn" v-if="loading === 'null'"
         @click="open('https://github.com/zhangyuang/v8-profiler-rs#contact')">Contact Author</Button>
     </div>
     <div class="chartContainer">
-      <div class="loadingContainer" v-if="store.loaded === 'loading'">
+      <div class="loadingContainer" v-if="loading === 'loading'">
         <Loading color="#5b92f8" size="50"></Loading>
         <div class="text" v-if="parseMethod == 'wasm'">
           Parsing file using WASM, depending on file size this may take
@@ -72,7 +70,7 @@
       <router-view v-slot="{ Component }">
         <component ref="children" :is="Component" />
       </router-view>
-      <div v-if="store.loaded === 'null'" class="tips">
+      <div v-if="loading === 'null'" class="tips">
         Please select and upload V8 heap snapshot file
       </div>
     </div>
@@ -197,13 +195,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { Button, Field, Loading, DropdownMenu, DropdownItem, Popover } from 'vant'
 import axios from 'axios'
 import type { Node, RenderOptions } from '@/type'
-import { useSnapShotStore } from '@/store'
+import { globalStore } from '@/store'
 import {
   compareOptions, filterNodeOptions, read,
   tips, filterConstructorOptions, NODE_COLORS, EDGE_COLORS, renderNodeId
 } from '@/utils'
 import { analyzeCompare, unitConvert } from '@/analyze'
-const store = useSnapShotStore()
 const router = useRouter()
 const route = useRoute()
 const path = route.path
@@ -215,6 +212,7 @@ const pop = reactive({
   source: false,
   snapshot: false
 })
+const loading = ref('null')
 let worker: Worker | null = null
 onMounted(async () => {
   worker = new Worker('worker.js', {
@@ -222,16 +220,12 @@ onMounted(async () => {
   })
   if (query.heapsnapshot) {
     const heapsnapshot = query.heapsnapshot as string
-    store.setLoading('loading')
     const res = await axios.get(heapsnapshot, {
       responseType: 'arraybuffer'
     })
     const uint8Array = new Uint8Array(res.data)
     const parseResult = await parse(uint8Array)
-    store.setData({
-      data: parseResult,
-    })
-    store.setLoading('finish')
+    setStore(parseResult)
     confirm()
   }
 })
@@ -282,7 +276,15 @@ renderOptions.label = {
   }
 }
 
-
+const setStore = (data: Node[]) => {
+  loading.value = 'loading'
+  globalStore.data = data
+  globalStore.idToNode = data.reduce((acc, item) => {
+    acc[item.id] = item
+    return acc
+  }, {} as Record<number, Node>)
+  loading.value = 'finish'
+}
 const open = (url: string) => {
   window.open(url)
 }
@@ -290,20 +292,16 @@ watch(router.currentRoute, async (to) => {
   renderOptions.isIndex = to.path === '/'
   await nextTick()
   renderNodeId.value = to.params.node as string
-  children.value.render(store.data)
+  children.value.render()
 })
 
 const defaultDemo = async () => {
-  store.setLoading('loading')
   const res = await axios.get('https://res.wx.qq.com/shop/public/26d3bd44-ab36-4caf-8d87-6e97f489464c.heapsnapshot', {
     responseType: 'arraybuffer'
   })
   const uint8Array = new Uint8Array(res.data)
   const parseResult = await parse(uint8Array)
-  store.setData({
-    data: parseResult,
-  })
-  store.setLoading('finish')
+  setStore(parseResult)
   confirm()
 }
 
@@ -315,29 +313,26 @@ const upload = async (e: any) => {
   }
   if (file.length == 2) {
     file.sort((a, b) => a.size - b.size);
-    const [small, big] = await Promise.all([read(file[0]), read(file[1])]);
-    const smallRes = await parse(small)
-    const bigRes = await parse(big)
-    const { additionalStatistic, biggerStatistic, additionalNode, biggerNode } = analyzeCompare(smallRes, bigRes, 'panel')
-    compare.value.is = true
-    compare.value.addtionalLen = additionalNode.length
-    compare.value.biggerLen = biggerNode.length
+    // const [small, big] = await Promise.all([read(file[0]), read(file[1])]);
+    // const smallRes = await parse(small)
+    // const bigRes = await parse(big)
+    // const { additionalStatistic, biggerStatistic, additionalNode, biggerNode } = analyzeCompare(smallRes, bigRes, 'panel')
+    // compare.value.is = true
+    // compare.value.addtionalLen = additionalNode.length
+    // compare.value.biggerLen = biggerNode.length
 
-    renderOptions.analyze.additional = additionalStatistic
-    renderOptions.analyze.bigger = biggerStatistic
-    store.setData({
-      data: bigRes,
-      compareData: additionalNode.concat(biggerNode),
-    })
-    confirm()
-    return
+    // renderOptions.analyze.additional = additionalStatistic
+    // renderOptions.analyze.bigger = biggerStatistic
+    // store.setData({
+    //   data: bigRes,
+    //   compareData: additionalNode.concat(biggerNode),
+    // })
+    // confirm()
+    // return
   }
   const result = await read(file[0])
   const parseResult = await parse(result)
-
-  store.setData({
-    data: parseResult,
-  })
+  setStore(parseResult)
   confirm()
 }
 
@@ -345,7 +340,7 @@ const upload = async (e: any) => {
 
 const parse = async (result: Uint8Array): Promise<Node[]> => {
   console.time('parse')
-  store.setLoading('loading')
+  loading.value = 'loading'
   const sharedBuffer = new SharedArrayBuffer(result.byteLength)
   const sharedArray = new Uint8Array(sharedBuffer)
   sharedArray.set(result)
@@ -355,7 +350,7 @@ const parse = async (result: Uint8Array): Promise<Node[]> => {
     worker?.addEventListener('message', (e) => {
       const parseResultJSON = JSON.parse(new TextDecoder().decode(e.data))
       console.timeEnd('parse')
-      store.setLoading('finish')
+      loading.value = 'finish'
       resolve(parseResultJSON)
     }, { once: true })
   })
@@ -433,9 +428,9 @@ const confirm = () => {
   let res: Node[] = []
   if (compare.value.is) {
     const { addtionalLen, mode } = compare.value
-    res = mode === 'addtional' ? store.compareData.slice(0, addtionalLen) : store.compareData.slice(addtionalLen)
+    // res = mode === 'addtional' ? globalStore.data.slice(0, addtionalLen) : globalStore.data.slice(addtionalLen)
   } else {
-    res = store.data
+    res = globalStore.data
   }
   const filteredNodes = renderOptions.filterNodeByConstructor === 'all' ? res :
     res.filter(item => item.constructor === renderOptions.filterNodeByConstructor)
