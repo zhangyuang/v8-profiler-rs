@@ -24,11 +24,11 @@ jobs:
           if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
           then
             echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            npm publish && cd example && npm run deploy
+            npm publish && cd example && yarn && npm run deploy
           elif git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+";
           then
             echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            npm publish && cd example && npm run deploy
+            npm publish && cd example && yarn && npm run deploy
           else
             echo "Not a release, skipping publish"
           fi
