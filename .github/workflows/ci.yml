@@ -11,7 +11,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:  
   deploy: 
-    if: ${{ contains(github.actor, 'zhangyuang') && github.ref_name == 'main' && contains(github.event.head_commit.message, 'deploy example')}}
+    if: ${{ contains(github.actor, 'zhangyuang') && github.ref_name == 'main'}}
       
     runs-on: ubuntu-latest 
     steps:
