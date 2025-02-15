@@ -27,84 +27,82 @@ const router = useRouter()
 function generate(node: Node) {
   const idToNode = globalStore.idToNode
   const links: GraphSeriesOption['links'] = []
-  const nodes: GraphSeriesOption['data'] = []
   let queue = [node]
-  let pathStore: Record<number, number[]> = {} // 记录已经建立的指向关系
+  const pathStore: Record<number, number[]> = {} // 记录已经建立的指向关系
   let depth = 0
   const arr: Array<{ source: number, target: number }> = []
-  // 引用深度
-  queue = [node]
-  pathStore = {}
-  depth = 0
   while (queue.length) {
     if (depth === Number(childDepth.value)) break
     depth++
-    const tempArr = queue
-    queue = []
-    tempArr.forEach(node => {
-      const children = node.edges.slice(0, edgeCounts.value).map(item => item.to_node)
-      for (const childId of children) {
-        const childNode = idToNode[childId]
-        if (!childNode) {
-          continue
-        }
-        if (nodeName.value && !childNode.name.toLocaleLowerCase().includes(nodeName.value.toLocaleLowerCase())) {
-          continue
-        }
-
-        if (Number(filterNative.value) === 1 && nativeNode.includes(childNode.node_type as NodeType)) {
-          continue
-        }
-        if (!pathStore[node.id]) pathStore[node.id] = []
-        if (!pathStore[node.id].includes(childId)) {
-          arr.push({
-            source: node.id,
-            target: childId,
-          })
-          pathStore[node.id].push(childId)
-          queue.push(childNode)
-        }
+    const currentNode = queue.shift()!
+    const children = currentNode.edges.slice(0, edgeCounts.value).map(item => item.to_node)
+    for (const childId of children) {
+      const childNode = idToNode[childId]
+      if (!childNode) {
+        continue
       }
-    })
+      if (nodeName.value && !childNode.name.toLocaleLowerCase().includes(nodeName.value.toLocaleLowerCase())) {
+        continue
+      }
+      if (!pathStore[currentNode.id]) pathStore[currentNode.id] = []
+      if (!pathStore[currentNode.id].includes(childId)) {
+        arr.push({
+          source: currentNode.id,
+          target: childId,
+        })
+        pathStore[currentNode.id].push(childId)
+        queue.push(childNode)
+      }
+    }
   }
 
-  const nodeStore: Record<number, 1 | undefined> = {}
-  console.log('边关系', arr)
-  const nodeToIndex: Record<number, number> = {} // 记录每一个节点在 nodes 里面的下标
-  arr.forEach((relationship) => {
-    const { source, target } = relationship;
-    [source, target].forEach(relationNodeId => {
-      const node = idToNode[relationNodeId]
-      if (node && !nodeStore[relationNodeId]) {
-        nodes.push({
-          id: String(node.id),
-          // @ts-expect-error
-          constructor: node.constructor,
-          name: String(node.name),
-          value: node.retained_size,
-          symbolSize: Number(node.id) === Number(renderNodeId.value) ? nodeSize.value * 8 : nodeSize.value * 2 as any,
-          itemStyle: {
-            ...node,
-            color: node.id === Number(renderNodeId.value) ? 'red' : NODE_COLORS[node.node_type as NodeType]
-          }
-        })
-        nodeToIndex[node.id] = nodes.length - 1
+  const retainers = []
+  let currentNode = idToNode[renderNodeId.value]
+  console.log('currentNode', currentNode)
+  for (let i = 0; i < 3; i++) {
+    currentNode = idToNode[currentNode.retainer]
+    retainers.push(currentNode)
+  }
+  const nodes = Array.from(new Map(arr.map(item => [idToNode[item.source], idToNode[item.target]]).flat().map(node => [node.id, node])).values())
+    .concat(retainers)
+    .map(node => {
+      return {
+        id: node.id,
+        constructor: node.constructor,
+        name: node.name,
+        value: node.retained_size,
+        retainer: node.retainer,
+        symbolSize: Number(node.id) === Number(renderNodeId.value) ? nodeSize.value * 8 : nodeSize.value * 2 as any,
+        itemStyle: {
+          ...node,
+          color: node.id === Number(renderNodeId.value) ? 'red' : NODE_COLORS[node.node_type as NodeType]
+        }
       }
-      nodeStore[relationNodeId] = 1
     })
-  })
+  console.log('边关系', arr)
   arr.forEach((relationship) => {
     const { source, target } = relationship;
-    const sourceNode = idToNode[source]
-    const edge = sourceNode.edges.find(item => Number(item.to_node) === Number(target))
+    const edge = idToNode[source].edges.find(item => Number(item.to_node) === Number(target))
     edge && links.push({
-      source: nodeToIndex[source],
-      target: nodeToIndex[target],
+      source: nodes.findIndex(item => item.id === source),
+      target: nodes.findIndex(item => item.id === target),
       lineStyle: {
         // @ts-expect-error
         edge_type: edge!.edge_type,
         name_or_index: edge!.name_or_index,
         color: EDGE_COLORS[edge!.edge_type]
+      },
+    })
+  })
+  retainers.forEach((retainer) => {
+    links.push({
+      source: nodes.findIndex(item => item.id === retainer.id),
+      target: nodes.findIndex(item => item.retainer === retainer.id),
+      lineStyle: {
+        // @ts-expect-error
+        edge_type: 'retainer',
+        name_or_index: 'retainer',
+        color: 'red'
       },
     })
   })
@@ -116,7 +114,6 @@ const render = () => {
   (renderOptions as RenderOptions).nodeByConstructor = calculateByConstructor(data as any)
   const option: EChartsOption = {
     tooltip: tooltip.value,
-    // @ts-expect-error
     series: [
       {
         type: 'graph',
@@ -133,6 +130,7 @@ const render = () => {
             return name_or_index
           }
         },
+
         edges: links,
         label: label.value,
         force: force.value,
