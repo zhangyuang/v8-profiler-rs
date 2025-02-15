@@ -9,6 +9,7 @@
 //@ts-expect-error
 import markdown from 'markdown-it';
 import { globalStore } from '@/store'
+import type { Node } from '@/type'
 const md = markdown({
   html: true,
   linkify: true,
@@ -16,11 +17,11 @@ const md = markdown({
 })
 const minCount = 20
 const snapShotStore = globalStore.data
-const nodeNameCount = snapShotStore.reduce((acc: Record<string, { count: number, source?: string }>, node) => {
+const nodeNameCount = snapShotStore.reduce((acc: Record<string, { count: number } & Node>, node) => {
   const name = node.name
   acc[name] = {
     count: (acc[name]?.count || 0) + 1,
-    source: node.source,
+    ...node
   }
   return acc
 }, {})
@@ -28,7 +29,7 @@ const nodeNameCount = snapShotStore.reduce((acc: Record<string, { count: number,
 const duplicateNodes = Object.entries(nodeNameCount)
   .filter(([name, info]) => name && info.count > minCount && info.source && !info.source?.startsWith('node:'))
   .sort(([_, infoA], [__, infoB]) => infoB.count - infoA.count)
-  .map(([name, info]) => `- ${name}: ${info.count} ${info.source ? `(<text class="!text-blue-500">${info.source.replace(/^http(s)?:\/\//, '')}</text>)` : ''}`)
+  .map(([name, info]) => `- ${name}@${info.id}: ${info.count} ${info.source ? `(<text class="!text-blue-500">${info.source.replace(/^http(s)?:\/\//, '')}</text>)` : ''}`)
   .join('\n')
 
 const constructorRetainedSize = snapShotStore.reduce((acc: Record<string, number>, node) => {

@@ -20,10 +20,21 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 18
-
-      - run: cd example && yarn && npm run deploy
+      - run: |
+          if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
+          then
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            npm publish && cd example && npm run deploy
+          elif git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+";
+          then
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            npm publish && cd example && npm run deploy
+          else
+            echo "Not a release, skipping publish"
+          fi
         env:
-          CI: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           SERVERLESS_DEPLOY_AK: ${{ secrets.SERVERLESS_DEPLOY_AK }}
           SERVERLESS_DEPLOY_ENDPOINT: ${{ secrets.SERVERLESS_DEPLOY_ENDPOINT }}
           SERVERLESS_DEPLOY_ID: ${{ secrets.SERVERLESS_DEPLOY_ID }}
