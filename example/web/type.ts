@@ -29,11 +29,10 @@ export type Node = {
     is_weak: boolean;
     is_ref: boolean;
   }[];
-  compare_type?: string;
   parents: number[];
   bigger_number?: number;
   source?: string;
-  constructor?: string;
+  constructor: string;
   percent?: string;
   retainer: number
 }
@@ -48,30 +47,18 @@ export type RenderOptions = {
   nodeSize: number;
   edgeLength: number;
   edgeCounts: number;
-  parentDepth: number;
   childDepth: number;
-  weakOrStrong: string;
   nodeName: string;
   nodeId: string;
   filterNative: number,
-  parseMethod: 'wasm' | 'webworker',
   tooltip: {},
   force: {},
   label: {},
-  compare: {
-    is: boolean
-    mode: 'addtional' | 'bigger'
-    addtionalLen: number
-    biggerLen: number
-  }
-  filterNode: number
   analyze: {
-    show: boolean
-    sortByCount?: SortDetail[]
-    sortRetainedSize?: Node[],
-    additional?: Analyze
-    bigger?: Analyze
+    type: 'single' | 'compare',
+    compare: 'addtional' | 'bigger'
   },
+  filterNode: number
   nodeByConstructor?: Record<string, number>
   filterNodeByConstructor?: string
 }

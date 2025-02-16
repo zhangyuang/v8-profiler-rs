@@ -23,19 +23,18 @@
           <DropdownItem class="field" v-model="renderOptions.filterNodeByConstructor"
             :options="filterConstructorOptions" />
         </DropdownMenu>
-        <!-- <DropdownMenu class="field">
+        <DropdownMenu class="field">
           <DropdownItem class="field" v-model="filterNode" :options="filterNodeOptions" />
-        </DropdownMenu> -->
+        </DropdownMenu>
+        <DropdownMenu v-if="renderOptions.analyze.type === 'compare'" class="field">
+          <DropdownItem class="field" v-model="renderOptions.analyze.compare" :options="compareOptions" />
+        </DropdownMenu>
       </template>
       <template v-if=!isIndex>
-        <Field class="field" v-model="parentDepth" label="Reference Depth"></Field>
         <Field class="field" v-model="childDepth" label="Reference Depth"></Field>
         <Field class="field" v-model="edgeCounts" label="Max Edge Count"></Field>
         <Field class="field" v-model="filterNative" label="Filter Native Nodes"></Field>
       </template>
-      <DropdownMenu class="field" v-if="compare.is">
-        <DropdownItem class="field" v-model="compare.mode" :options="compareOptions" />
-      </DropdownMenu>
       <input type="file" @change="upload" ref="fileRef" accept=".heapsnapshot" class="inputFile" multiple="true">
       <Popover v-model:show="pop.snapshot" placement="right-start"
         :actions="[{ text: 'Support uploading two snapshot files for comparison' },]">
@@ -62,7 +61,7 @@
     <div class="chartContainer">
       <div class="loadingContainer" v-if="loading === 'loading'">
         <Loading color="#5b92f8" size="50"></Loading>
-        <div class="text" v-if="parseMethod == 'wasm'">
+        <div class="text">
           Parsing file using WASM, depending on file size this may take
           3-20s, Firefox browser recommended, please wait...
         </div>
@@ -97,95 +96,7 @@
         </div>
       </div>
     </div>
-    <div
-      class="fixed right-[0px] top-[0px] analyze px-[20px] pt-[40px] pb-[20px] flex flex-col min-w-[300px] max-w-[500px] overflow-scroll box-border z-10"
-      v-if="analyze.show">
-      <div class="flex items-center text-[20px] fixed top-0 bg-white py-[10px] z-20 w-full">
-        <img class="w-[20px] h-[20px]" src="/close.svg" alt="" @click="analyze.show = false">
-        分析报告
-      </div>
-      <div class=" mb-[20px]">
 
-      </div>
-      <template v-if="compare.is">
-        <div class="flex items-center">
-          <div class="bg-[#DB7093] rounded-[50%] w-[10px] h-[10px]"></div>
-          <div class="ml-[10px] text-black text-opacity-50">新增节点数量</div>
-          <div class="ml-[10px] font-mono">{{ compare.addtionalLen }}</div>
-        </div>
-        <div class="flex items-center mb-[10px]">
-          <div class="bg-[#800080] rounded-[50%] w-[10px] h-[10px]"></div>
-          <div class="ml-[10px] text-black text-opacity-50">增大节点数量</div>
-          <div class="ml-[10px] font-mono">{{ compare.biggerLen }}</div>
-        </div>
-        <div v-if="analyze.additional?.sortByCount?.length">
-          <div class="mb-[10px]">
-            新增节点中JS层重复节点：
-          </div>
-          <div v-for="item in analyze.additional.sortByCount" class="text-black text-opacity-50 mb-[10px]">
-            新增节点名称: <span class="font-bold">{{ item.name }} </span>， 新增次数达到 <span class="font-bold">{{
-              item.count
-              }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
-            <template v-if="item.sourceString.includes('<br />')">
-              位于多个文件 <div class="" v-html="item.sourceString"></div>
-            </template>
-            <template v-else>
-              仅存在于文件 <div class="" v-html="item.sourceString"></div> <span class="text-red-500">疑似存在内存泄漏</span>
-            </template>
-          </div>
-        </div>
-        <div v-if="analyze.additional?.sortRetainedSize?.length">
-          <div class="mb-[10px]">
-            新增节点中JS层占用内存最大节点：
-          </div>
-          <div v-for="item in analyze.additional?.sortRetainedSize" class="text-black text-opacity-50 mb-[10px]">
-            新增节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span> 可释放大小 <span class="font-bold">{{
-              unitConvert(item.retained_size)
-              }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
-          </div>
-        </div>
-        <div v-if="analyze.bigger?.sortRetainedSize?.length">
-          <div class="mb-[10px]">
-            增大节点中JS层占用内存最大节点：
-          </div>
-          <div v-for="item in analyze.bigger?.sortRetainedSize" class="text-black text-opacity-50 mb-[10px]">
-            增大节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span> 增长大小 <span class="font-bold">{{
-              unitConvert(item.bigger_number ?? 0)
-              }}</span>， 可释放大小占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
-          </div>
-        </div>
-      </template>
-      <template v-else>
-        <!-- single heapsnapshot analyze -->
-        <div v-if="analyze.sortByCount?.length">
-          <div class="mb-[10px]">
-            JS层重复节点：
-          </div>
-          <div v-for="item in analyze.sortByCount" class="text-black text-opacity-50 mb-[10px]">
-            节点名称: <span class="font-bold">{{ item.name }} </span>， 重复次数达到 <span class="font-bold">{{
-              item.count
-              }}</span>，共占用内存 <span class="font-bold">{{ unitConvert(item.shallowSize) }}</span>
-            <template v-if="item.sourceString.includes('<br />')">
-              位于多个文件 <div class="" v-html="item.sourceString"></div>
-            </template>
-            <template v-else>
-              仅存在于文件 <div class="" v-html="item.sourceString"></div> <span class="text-red-500">疑似存在内存泄漏</span>
-            </template>
-          </div>
-        </div>
-        <div v-if="analyze.sortRetainedSize?.length">
-          <div class="mb-[10px]">
-            JS层自身内存比可GC内存比例最大节点：
-          </div>
-          <div v-for="item in analyze.sortRetainedSize" class="text-black text-opacity-50 mb-[10px]">
-            节点: <span class="font-bold">{{ item.name }}@{{ item.id }} </span>
-            可GC内存倍数<span class="font-bold">{{ item.pt }}倍 </span> GC后可释放大小 <span class="font-bold">{{
-              unitConvert(item.retained_size)
-              }}</span>， 占总内存<span class="font-bold">{{ item.percent }}</span> 位于文件 {{ item.source }}
-          </div>
-        </div>
-      </template>
-    </div>
   </div>
 </template>
 
@@ -198,9 +109,9 @@ import type { Node, RenderOptions } from '@/type'
 import { globalStore } from '@/store'
 import {
   compareOptions, filterNodeOptions, read,
-  tips, filterConstructorOptions, NODE_COLORS, EDGE_COLORS, renderNodeId
+  tips, filterConstructorOptions, NODE_COLORS, EDGE_COLORS, renderNodeId, calculateByConstructor
 } from '@/utils'
-import { analyzeCompare, unitConvert } from '@/analyze'
+import { unitConvert } from '@/analyze'
 const router = useRouter()
 const route = useRoute()
 const path = route.path
@@ -238,31 +149,24 @@ const renderOptions = reactive({
   nodeSize: 10,
   edgeLength: 150,
   edgeCounts: 5,
-  parentDepth: 2,
   childDepth: 2,
-  weakOrStrong: '0',
   nodeName: '',
   nodeId: '',
   filterNative: 0,
   filterNode: 0,
-  parseMethod: 'wasm',
   tooltip: {},
   force: {},
   label: {},
-  compare: {
-    is: false,
-    mode: 'addtional',
-    addtionalLen: -1
-  },
   analyze: {
-    show: false,
+    type: 'single',
+    compare: 'addtional'
   },
   nodeByConstructor: {},
   filterNodeByConstructor: 'all'
 } as RenderOptions)
 
-const { maxNodes, isIndex, edgeCounts, parentDepth, childDepth,
-  nodeName, nodeId, filterNative, parseMethod, compare, analyze,
+const { maxNodes, isIndex, edgeCounts, childDepth,
+  nodeName, nodeId, filterNative,
   filterNode
 } = toRefs(renderOptions)
 
@@ -292,7 +196,7 @@ watch(router.currentRoute, async (to) => {
   renderOptions.isIndex = to.path === '/'
   await nextTick()
   renderNodeId.value = to.params.node as string
-  children.value.render()
+  confirm()
 })
 
 const defaultDemo = async () => {
@@ -308,27 +212,29 @@ const defaultDemo = async () => {
 const upload = async (e: any) => {
   const file = Array.from((e.target as HTMLInputElement)?.files!)
   if (!file || file.length > 2) {
-    tips('当前最大只支持选择两个文件', 'danger')
+    tips('The maximum number of files currently supported is 2', 'danger')
     return
   }
   if (file.length == 2) {
+    renderOptions.analyze.type = 'compare'
     file.sort((a, b) => a.size - b.size);
-    // const [small, big] = await Promise.all([read(file[0]), read(file[1])]);
-    // const smallRes = await parse(small)
-    // const bigRes = await parse(big)
-    // const { additionalStatistic, biggerStatistic, additionalNode, biggerNode } = analyzeCompare(smallRes, bigRes, 'panel')
-    // compare.value.is = true
-    // compare.value.addtionalLen = additionalNode.length
-    // compare.value.biggerLen = biggerNode.length
-
-    // renderOptions.analyze.additional = additionalStatistic
-    // renderOptions.analyze.bigger = biggerStatistic
-    // store.setData({
-    //   data: bigRes,
-    //   compareData: additionalNode.concat(biggerNode),
-    // })
-    // confirm()
-    // return
+    const [small, big] = await Promise.all([read(file[0]), read(file[1])]);
+    const smallRes = await parse(small)
+    const bigRes = await parse(big)
+    const smallIdToNode = smallRes.reduce((acc, item) => {
+      acc[item.id] = item
+      return acc
+    }, {} as Record<number, Node>)
+    globalStore.additionalNodes = bigRes.filter(node => !smallIdToNode[node.id])
+    setStore(globalStore.additionalNodes)
+    confirm()
+    globalStore.biggerNodes = bigRes.filter(node => {
+      if (smallIdToNode[node.id] && node.retained_size > smallIdToNode[node.id].retained_size) {
+        node.bigger_number = node.retained_size - smallIdToNode[node.id].retained_size
+        return true
+      }
+    })
+    return
   }
   const result = await read(file[0])
   const parseResult = await parse(result)
@@ -336,7 +242,13 @@ const upload = async (e: any) => {
   confirm()
 }
 
-
+watch(() => renderOptions.analyze.compare, () => {
+  if (renderOptions.analyze.compare === 'addtional') {
+    setStore(globalStore.additionalNodes)
+  } else if (renderOptions.analyze.compare === 'bigger') {
+    setStore(globalStore.biggerNodes)
+  }
+})
 
 const parse = async (result: Uint8Array): Promise<Node[]> => {
   console.time('parse')
@@ -425,19 +337,13 @@ renderOptions.tooltip = {
 
 const confirm = () => {
   console.log('renderOptions', renderOptions)
-  let res: Node[] = []
-  if (compare.value.is) {
-    const { addtionalLen, mode } = compare.value
-    // res = mode === 'addtional' ? globalStore.data.slice(0, addtionalLen) : globalStore.data.slice(addtionalLen)
-  } else {
-    res = globalStore.data
-  }
+  const res = globalStore.data
   const filteredNodes = renderOptions.filterNodeByConstructor === 'all' ? res :
     res.filter(item => item.constructor === renderOptions.filterNodeByConstructor)
   if (['string', 'concatenated string'].includes(renderOptions.filterNodeByConstructor ?? '')) {
     filteredNodes.sort((a, b) => b.retained_size - a.retained_size)
   }
-  children.value.render(filteredNodes)
+  children.value.render(filterNode.value === 1 ? filteredNodes.filter(item => item.source) : filteredNodes)
 }
 
 

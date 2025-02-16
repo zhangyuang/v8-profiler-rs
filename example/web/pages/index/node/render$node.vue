@@ -58,10 +58,9 @@ function generate(node: Node) {
 
   const retainers = []
   let currentNode = idToNode[renderNodeId.value]
-  console.log('currentNode', currentNode)
   for (let i = 0; i < 3; i++) {
     currentNode = idToNode[currentNode.retainer]
-    retainers.push(currentNode)
+    currentNode && retainers.push(currentNode)
   }
   const nodes = Array.from(new Map(arr.map(item => [idToNode[item.source], idToNode[item.target]]).flat().map(node => [node.id, node])).values())
     .concat(retainers)

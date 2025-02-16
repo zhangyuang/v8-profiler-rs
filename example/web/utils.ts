@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { Notify } from 'vant'
+import { globalStore } from '@/store'
 import type { Node } from './type'
 export const noRepeat = (arr: number[]) => Array.from(new Set(arr))
 
@@ -134,16 +135,16 @@ export const parseOptions = [
   { text: 'Wasm + WebWorker', value: 'webworker' },
 ];
 export const compareOptions = [
-  { text: 'Compare Method', value: 'addtional' },
-  { text: 'New Nodes', value: 'addtional' },
+  { text: 'Compare Type', value: 'addtional' },
+  { text: 'Additional Nodes', value: 'addtional' },
   { text: 'Growing Nodes', value: 'bigger' },
 ];
 
 export const filterNodeOptions = [
-  { text: 'Filter Non-JS Layer Nodes', value: 0 },
-  { text: 'Show JS Non-Native Nodes Only (Business Nodes)', value: 1 },
-  { text: 'Show All JS Layer Nodes', value: 2 },
+  { text: 'Filter Nodes', value: 0 },
+  { text: 'Show Nodes With Source Path', value: 1 },
 ]
+
 export const filterConstructorOptions = ref([
   { text: 'Filter Nodes type', value: 'all' },
 ])
@@ -158,7 +159,10 @@ export const memoryPercent = (node: Node, root: Node) => {
   return ((node.retained_size / root.retained_size) * 100).toFixed(2) + '%'
 }
 
-export const calculateByConstructor = (nodes: Node[]) => {
+export const calculateByConstructor = (nodes?: Node[]) => {
+  if (!nodes) {
+    nodes = globalStore.data
+  }
   const constructorCounts: Record<string, number> = {};
 
   // Count nodes by constructor
