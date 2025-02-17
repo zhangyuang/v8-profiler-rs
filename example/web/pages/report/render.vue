@@ -87,7 +87,7 @@ else {
   const duplicateNodes = Object.entries(nodeNameCount)
     .filter(([name, info]) => name && info.count > minCount && info.source && !info.source?.startsWith('node:'))
     .sort(([_, infoA], [__, infoB]) => infoB.count - infoA.count)
-    .map(([name, info]) => `- ${name}@${info.id}: ${info.count} ${info.source ? `(<text class="!text-blue-500">${info.source.replace(/^http(s)?:\/\//, '')}</text>)` : ''}`)
+    .map(([name, info]) => `- ${name}@${info.id}: ${info.count} ${info.source ? `<span class="!text-blue-500">${info.source}</span>` : ''}`)
     .join('\n')
 
   const constructorRetainedSize = snapShotStore.reduce((acc: Record<string, number>, node) => {
@@ -120,3 +120,9 @@ else {
 
 
 </script>
+
+<style>
+a {
+  color: rgba(59, 130, 246, 1) !important;
+}
+</style>

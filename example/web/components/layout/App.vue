@@ -343,7 +343,7 @@ const confirm = () => {
   if (['string', 'concatenated string'].includes(renderOptions.filterNodeByConstructor ?? '')) {
     filteredNodes.sort((a, b) => b.retained_size - a.retained_size)
   }
-  children.value.render(filterNode.value === 1 ? filteredNodes.filter(item => item.source) : filteredNodes)
+  children.value?.render?.(filterNode.value === 1 ? filteredNodes.filter(item => item.source) : filteredNodes)
 }
 
 
