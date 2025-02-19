@@ -92,6 +92,14 @@ The node fields are as follows:
 }
 ```
 
+## Start in local
+
+```bash
+$ git clone https://github.com/zhangyuang/v8-profiler-rs.git
+$ cd v8-profiler-rs/example
+$ yarn && yarn start
+```
+
 ## Default example
 
 View default example by clicking the `Example` button on the top left corner.
