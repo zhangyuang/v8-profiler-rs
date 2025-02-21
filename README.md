@@ -4,6 +4,16 @@
 
 [v8-profiler-rs](https://github.com/zhangyuang/v8-profiler-rs) is a project developed in `Rust` for intelligent online analysis of `V8 heapsnapshot` files. It helps developers using V8-based applications like `Node.js/Chrome/Deno/Electron` to better understand program memory structure and assist in locating memory leaks.
 
+## How to start
+
+Recommend using [Online Demo](https://v8.ssr-fc.com/), it's more convenient. Or you can start it in local.
+
+```bash
+$ git clone https://github.com/zhangyuang/v8-profiler-rs.git
+$ cd v8-profiler-rs/example
+$ yarn && yarn start
+```
+
 ## Online Demo
 
 We have deployed an [online website](https://v8.ssr-fc.com/) where you can upload and analyze V8 memory snapshots in real-time. We recommend using `Safari` or `Firefox` browsers, as `wasm` execution performance is significantly better than in `Chrome` .
@@ -90,14 +100,6 @@ The node fields are as follows:
     "constructor": string; // the constructor of the node
     "percent": string; // the retained size ratio of the node
 }
-```
-
-## Start in local
-
-```bash
-$ git clone https://github.com/zhangyuang/v8-profiler-rs.git
-$ cd v8-profiler-rs/example
-$ yarn && yarn start
 ```
 
 ## Default example
