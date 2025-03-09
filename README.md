@@ -20,6 +20,154 @@ We have deployed an [online website](https://v8.ssr-fc.com/) where you can uploa
 
 ![image](https://res.wx.qq.com/shop/public/2025-02-12/e56b4e3d-a8d1-4638-b7b7-f92412e54a8f.png)
 
+## Default example
+
+View default example by clicking the `Example` button on the top left corner.
+
+The code of default example is as follows:
+
+```js
+const express = require('express');
+const app = express();
+const fs = require('fs')
+// the memory leak code
+let theThing = null;
+let replaceThing = function() {
+    let leak = theThing;
+    let unused = function() {
+        if (leak)
+            console.log("hi")
+    };
+
+    theThing = {
+        bigNumber: 1,
+        bigArr: [],
+        longStr: new Array(1000000),
+        someMethod: function() {
+            console.log('a');
+        }
+    };
+};
+let index = 0
+app.get('/leak', function closureLeak(req, res, next) {
+    replaceThing();
+    index++
+    if (index === 1) {
+        const stream = require('v8').getHeapSnapshot()
+        stream.pipe(fs.createWriteStream('small-closure.heapsnapshot'))
+    }
+    if (index === 40) {
+        const stream = require('v8').getHeapSnapshot()
+        stream.pipe(fs.createWriteStream('medium-closure.heapsnapshot'))
+    }
+    if (index === 50) {
+        const stream = require('v8').getHeapSnapshot()
+        stream.pipe(fs.createWriteStream('big-closure.heapsnapshot'))
+    }
+    res.send('Hello Node');
+});
+
+app.listen(3001);
+```
+
+## Analyze Report
+
+There are two types of reports: single report and compare report.
+
+### Single Report
+
+```yml
+Analyze Report with single
+Only show nodes with more than 20 occurrences
+Memory retained by constructor type
+closure: 156409.05 MB
+
+Object: 156408.32 MB
+
+system / Context: 154881.33 MB
+
+array: 4579.70 MB
+
+synthetic: 1533.60 MB
+
+Array: 1526.16 MB
+
+WeakMap: 1526.01 MB
+
+(compiled code): 2.96 MB
+
+string: 2.10 MB
+
+There are some nodes that are duplicated too many times
+someMethod @70761: 202(memoryleak - demo / closure / index.js)
+HttpError @95957: 44(node_modules / http - errors / index.js)
+
+parse @89241: 33(node_modules / ms / index.js)
+
+ClientError @50469: 31(node_modules / http - errors / index.js)
+
+indexOf @49211: 27(node_modules / object - inspect / index.js)
+
+send @126827: 23(node_modules / send / index.js)
+
+resolve @98543: 23(node_modules / express / lib / view.js)
+```
+
+### Compare Report
+
+```yml
+Analyze Report with compare
+Only show nodes with more than 20 occurrences
+Additional nodes by constructor type
+    (compiled code): 242
+
+ArrayBuffer: 127
+
+system / JSArrayBufferData: 127
+
+Buffer: 126
+
+Node / std::basic_string: 78
+
+closure: 69
+
+Array: 46
+
+array: 44
+
+system / Context: 34
+
+Object: 29
+
+Bigger nodes by constructor type
+    (compiled code): 48
+closure: 25
+
+Bigger nodes by increased size
+@1: +83.54 MB
+Object @6613: +76.30 MB
+
+Array @154471: +76.30 MB
+
+Array @154499: +76.30 MB
+
+app @6603: +76.30 MB(node_modules / .pnpm / express @4 .18 .2 / node_modules / express / lib / express.js)
+
+router @6533: +76.30 MB(node_modules / .pnpm / express @4 .18 .2 / node_modules / express / lib / router / index.js)
+
+closureLeak @6481: +76.30 MB(memoryleak - demo / closure / index.js)
+
+Route @6511: +76.30 MB
+
+Layer @6517: +76.30 MB
+
+Layer @6497: +76.30 MB
+
+Server @6609: +76.30 MB
+
+system / Context @6483: +76.30 MB
+```
+
 ## Implemented Features 
 
 🚀 indicates implemented features. This application is continuously being updated, and updates will be synchronized to the README.md. Please stay tuned. If this application helps you, please give it a Star ✨
@@ -100,55 +248,4 @@ The node fields are as follows:
     "constructor": string; // the constructor of the node
     "percent": string; // the retained size ratio of the node
 }
-```
-
-## Default example
-
-View default example by clicking the `Example` button on the top left corner.
-
-The code of default example is as follows:
-
-```js
-const express = require('express');
-const app = express();
-const fs = require('fs')
-// the memory leak code
-let theThing = null;
-let replaceThing = function() {
-    let leak = theThing;
-    let unused = function() {
-        if (leak)
-            console.log("hi")
-    };
-
-    // 不断修改theThing的引用
-    theThing = {
-        bigNumber: 1,
-        bigArr: [],
-        longStr: new Array(1000000),
-        someMethod: function() {
-            console.log('a');
-        }
-    };
-};
-let index = 0
-app.get('/leak', function closureLeak(req, res, next) {
-    replaceThing();
-    index++
-    if (index === 1) {
-        const stream = require('v8').getHeapSnapshot()
-        stream.pipe(fs.createWriteStream('small-closure.heapsnapshot'))
-    }
-    if (index === 40) {
-        const stream = require('v8').getHeapSnapshot()
-        stream.pipe(fs.createWriteStream('medium-closure.heapsnapshot'))
-    }
-    if (index === 50) {
-        const stream = require('v8').getHeapSnapshot()
-        stream.pipe(fs.createWriteStream('big-closure.heapsnapshot'))
-    }
-    res.send('Hello Node');
-});
-
-app.listen(3001);
 ```
